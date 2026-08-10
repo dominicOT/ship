@@ -1,0 +1,54 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.release.outputs.upload_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          body: "Release for ${{ github.ref_name }}"
+
+  build-artifacts:
+    needs: create-release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            asset: ship-linux-x86_64.tar.gz
+            archive: tar.gz
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            asset: ship-macos-x86_64.tar.gz
+            archive: tar.gz
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            asset: ship-macos-aarch64.tar.gz
+            archive: tar.gz
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - run: cargo build --release --target ${{ matrix.target }}
+      - run: |
+          mkdir -p dist
+          tar -C "target/${{ matrix.target }}/release" -czf "dist/${{ matrix.asset }}" ship
+      - uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: dist/${{ matrix.asset }}
+          asset_name: ${{ matrix.asset }}
+          asset_content_type: application/gzip
