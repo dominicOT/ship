@@ -6,21 +6,7 @@ on:
       - 'v*'
 
 jobs:
-  create-release:
-    runs-on: ubuntu-latest
-    outputs:
-      upload_url: ${{ steps.release.outputs.upload_url }}
-    steps:
-      - uses: actions/checkout@v4
-      - id: release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ github.ref_name }}
-          name: ${{ github.ref_name }}
-          body: "Release for ${{ github.ref_name }}"
-
   build-artifacts:
-    needs: create-release
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -39,16 +25,13 @@ jobs:
             archive: tar.gz
     steps:
       - uses: actions/checkout@v4
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
+          targets: ${{ matrix.target }}
       - run: cargo build --release --target ${{ matrix.target }}
       - run: |
           mkdir -p dist
           tar -C "target/${{ matrix.target }}/release" -czf "dist/${{ matrix.asset }}" ship
-      - uses: actions/upload-release-asset@v1
+      - uses: softprops/action-gh-release@v1
         with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: dist/${{ matrix.asset }}
-          asset_name: ${{ matrix.asset }}
-          asset_content_type: application/gzip
+          files: dist/${{ matrix.asset }}
