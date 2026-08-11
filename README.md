@@ -55,19 +55,19 @@ cp target/release/ship ~/.local/bin/
 Install from a GitHub release binary:
 
 ```bash
-curl -sSL https://github.com/DORB-AI/ship/releases/latest/download/ship-linux-x86_64.tar.gz | tar xz -C ~/.local/bin ship
+curl -sSL https://github.com/dominicOT/ship/releases/latest/download/ship-linux-x86_64.tar.gz | tar xz -C ~/.local/bin ship
 ```
 
 Install with the one-line shell installer:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/DORB-AI/ship/main/scripts/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/dominicOT/ship/master/scripts/install.sh | bash
 ```
 
 To install to a custom directory:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/DORB-AI/ship/main/scripts/install.sh | bash -s -- --prefix ~/.local/bin
+curl -sSL https://raw.githubusercontent.com/dominicOT/ship/master/scripts/install.sh | bash -s -- --prefix ~/.local/bin
 ```
 
 ## Usage

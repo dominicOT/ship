@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO="DORB-AI/ship"
+REPO="dominicOT/ship"
 PROG="ship"
 DEFAULT_PREFIX="${HOME}/.local/bin"
 PREFIX="${PREFIX:-$DEFAULT_PREFIX}"
@@ -55,9 +55,7 @@ fi
 uname_os=$(uname -s)
 case "$uname_os" in
   Linux) os=linux ;;
-  Darwin) os=macos ;;
-  CYGWIN*|MINGW*|MSYS*) os=windows ;;
-  *) err "unsupported OS: $uname_os" ;;
+  *) err "Pre-built binaries currently only support Linux. For $uname_os, please install from source with: cargo install --path ." ;;
 esac
 
 uname_arch=$(uname -m)
