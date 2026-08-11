@@ -101,11 +101,7 @@ case "$archive" in
     if command -v unzip >/dev/null 2>&1; then
       unzip -q "$asset_path" -d "$tmpdir"
     elif command -v python3 >/dev/null 2>&1; then
-      python3 - <<'PY'
-import zipfile, sys
-with zipfile.ZipFile(sys.argv[1], 'r') as z:
-    z.extractall(sys.argv[2])
-PY "$asset_path" "$tmpdir"
+      python3 -c "import zipfile, sys; zipfile.ZipFile(sys.argv[1]).extractall(sys.argv[2])" "$asset_path" "$tmpdir"
     else
       err 'unzip or python3 is required to extract the zip archive'
     fi

@@ -1,3 +1,4 @@
 /target
 **/*.rs.bk
 Cargo.lock
+ship-linux-x86_64.tar.gz
