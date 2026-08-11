@@ -37,6 +37,7 @@ Checks
 
 Critical failures (tests, secrets) cause a non-zero exit code so you can gate deploys.
 
+
 ## Install
 
 Install from source:
