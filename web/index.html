@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SHIP — Pre-Flight Checklist CLI (1965 Manual Specs)</title>
+  <meta name="description" content="Ship — A fast pre-deploy checklist CLI written in Rust. Cape Canaveral vintage documentation manual.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --cream: #F5EFEB;
+      --paper: #FAF6F0;
+      --ink: #22201D;
+      --orange: #D9531E;
+      --mustard: #E09F3E;
+      --teal: #335C67;
+      --dark-teal: #1E383D;
+      --border: #3A3530;
+      --font-mono: 'Courier Prime', 'Courier New', monospace;
+      --font-header: 'Space Grotesk', 'Helvetica Neue', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--cream);
+      color: var(--ink);
+      font-family: var(--font-mono);
+      font-size: 15px;
+      line-height: 1.6;
+      padding: 2rem 1rem;
+      background-image: 
+        radial-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 0),
+        linear-gradient(to right, rgba(0,0,0,0.02) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(0,0,0,0.02) 1px, transparent 1px);
+      background-size: 24px 24px, 12px 12px, 12px 12px;
+    }
+
+    .manual-wrapper {
+      max-width: 920px;
+      margin: 0 auto;
+      background: var(--paper);
+      border: 3px solid var(--border);
+      box-shadow: 8px 8px 0px var(--border);
+      padding: 3rem 4rem;
+      position: relative;
+    }
+
+    /* Top stamp / Header block */
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .classification-stamp {
+      display: inline-block;
+      border: 2px dashed var(--orange);
+      color: var(--orange);
+      font-family: var(--font-header);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      padding: 4px 12px;
+      font-size: 0.85rem;
+      transform: rotate(-1.5deg);
+    }
+
+    .meta-spec {
+      font-size: 0.8rem;
+      text-align: right;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* Hero section */
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr 220px;
+      gap: 2rem;
+      align-items: center;
+      margin-bottom: 3rem;
+    }
+
+    .brand-title {
+      font-family: var(--font-header);
+      font-size: 4.5rem;
+      line-height: 0.9;
+      font-weight: 700;
+      letter-spacing: -2px;
+      color: var(--dark-teal);
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+
+    .tagline {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--orange);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 1rem;
+    }
+
+    .hero-desc {
+      font-size: 0.95rem;
+      color: #333;
+      max-width: 520px;
+    }
+
+    .badge-img {
+      width: 100%;
+      height: auto;
+      border: 2px solid var(--border);
+      box-shadow: 4px 4px 0px var(--border);
+      border-radius: 50%;
+    }
+
+    /* Section headers */
+    .section-title {
+      font-family: var(--font-header);
+      font-size: 1.4rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      background: var(--dark-teal);
+      color: #FFF;
+      display: inline-block;
+      padding: 4px 14px;
+      margin-bottom: 1.5rem;
+    }
+
+    /* Command / Terminal Card */
+    .terminal-box {
+      background: #1B1A17;
+      color: #E6E1DA;
+      border: 2px solid var(--border);
+      padding: 1.5rem;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.9rem;
+      box-shadow: 4px 4px 0px var(--border);
+      margin-bottom: 3rem;
+      position: relative;
+    }
+
+    .terminal-header {
+      color: var(--mustard);
+      border-bottom: 1px dashed #444;
+      padding-bottom: 0.5rem;
+      margin-bottom: 1rem;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .prompt { color: var(--orange); }
+    .check-pass { color: #69B578; }
+    .check-warn { color: var(--mustard); }
+    .check-fail { color: #E65F5C; }
+
+    /* Table specs */
+    .table-container {
+      margin-bottom: 3rem;
+    }
+
+    .spec-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      border: 2px solid var(--border);
+    }
+
+    .spec-table th {
+      background: #EAE3DB;
+      font-family: var(--font-header);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 10px 14px;
+      text-align: left;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .spec-table td {
+      padding: 10px 14px;
+      border-bottom: 1px solid #DDD6CD;
+    }
+
+    .spec-table tr:nth-child(even) {
+      background: #FAF3EA;
+    }
+
+    .badge-critical {
+      background: var(--orange);
+      color: white;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 2px 6px;
+      border-radius: 2px;
+    }
+
+    .badge-normal {
+      background: var(--teal);
+      color: white;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 2px 6px;
+      border-radius: 2px;
+    }
+
+    /* One liner install box */
+    .install-card {
+      background: #F0E8DD;
+      border: 2px solid var(--border);
+      padding: 1.5rem;
+      margin-bottom: 3rem;
+    }
+
+    .install-card h3 {
+      font-family: var(--font-header);
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      margin-bottom: 0.75rem;
+      color: var(--dark-teal);
+    }
+
+    .code-snippet {
+      background: #252321;
+      color: #7EC4CF;
+      padding: 12px 16px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.88rem;
+      border: 1px solid var(--border);
+      overflow-x: auto;
+      user-select: all;
+    }
+
+    /* Footer */
+    .manual-footer {
+      border-top: 2px solid var(--border);
+      padding-top: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8rem;
+      color: #666;
+    }
+
+    .footer-stamp {
+      font-family: var(--font-header);
+      font-weight: 700;
+      color: var(--teal);
+      text-transform: uppercase;
+    }
+
+    @media (max-width: 768px) {
+      .manual-wrapper {
+        padding: 1.5rem;
+      }
+      .hero-grid {
+        grid-template-columns: 1fr;
+      }
+      .badge-img {
+        max-width: 160px;
+        margin: 0 auto;
+        display: block;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <main class="manual-wrapper">
+    <!-- Header Block -->
+    <header class="top-bar">
+      <div>
+        <span class="classification-stamp">Unclassified // Flight Specs</span>
+      </div>
+      <div class="meta-spec">
+        <div>Doc ID: SPEC-SHIP-1965</div>
+        <div>System: Pre-Deployment Control</div>
+      </div>
+    </header>
+
+    <!-- Hero section -->
+    <section class="hero-grid">
+      <div>
+        <h1 class="brand-title">SHIP</h1>
+        <div class="tagline">One Command — Pre-Deploy Checklist</div>
+        <p class="hero-desc">
+          High-velocity release verification written in Rust. Designed to audit source code for security liabilities, uncommitted migrations, leftover debug diagnostics, and build integrity prior to orbital deployment.
+        </p>
+      </div>
+      <div>
+        <img src="badge.png" alt="1960s Apollo Launch Badge" class="badge-img">
+      </div>
+    </section>
+
+    <!-- Installation Command -->
+    <section class="install-card">
+      <h3>01. Rapid Installation Protocol</h3>
+      <p style="margin-bottom: 0.5rem; font-size: 0.85rem;">Execute the automated binary installer in your terminal:</p>
+      <div class="code-snippet">
+        curl -sSL https://raw.githubusercontent.com/dominicOT/ship/master/scripts/install.sh | bash
+      </div>
+    </section>
+
+    <!-- Simulated Output -->
+    <section>
+      <div class="section-title">02. Console Diagnostic Telemetry</div>
+      <div class="terminal-box">
+        <div class="terminal-header">NASA CAPE CANAVERAL // PRE-FLIGHT AUDIT TERMINAL v0.1.0</div>
+        <div><span class="prompt">$</span> ship</div>
+        <br>
+        <div style="color: var(--mustard); font-weight: bold;">ship — pre-deploy checklist</div>
+        <br>
+        <div>Checks</div>
+        <div>  <span class="check-pass">✓</span> tests           <span style="color: #888;">(cargo test pass)</span></div>
+        <div>  <span class="check-pass">✓</span> secrets         <span style="color: #888;">(no private keys found)</span></div>
+        <div>  <span class="check-pass">✓</span> TODOs           <span style="color: #888;">(0 pending items)</span></div>
+        <div>  <span class="check-pass">✓</span> console.logs    <span style="color: #888;">(clean output)</span></div>
+        <div>  <span class="check-pass">✓</span> feature flags   <span style="color: #888;">(all switches validated)</span></div>
+        <div>  <span class="check-pass">✓</span> version         <span style="color: #888;">(v0.1.0 synced)</span></div>
+        <div>  <span class="check-pass">✓</span> migrations      <span style="color: #888;">(schema up to date)</span></div>
+        <div>  <span class="check-pass">✓</span> changelog       <span style="color: #888;">(updated for release)</span></div>
+        <br>
+        <div class="check-pass" style="font-weight: bold;">✓ Ready to ship</div>
+      </div>
+    </section>
+
+    <!-- Checklist Specifications -->
+    <section class="table-container">
+      <div class="section-title">03. Automated Diagnostic Protocols</div>
+      <table class="spec-table">
+        <thead>
+          <tr>
+            <th>Module Name</th>
+            <th>Priority</th>
+            <th>Diagnostic Scope</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>tests</strong></td>
+            <td><span class="badge-critical">CRITICAL</span></td>
+            <td>Runs project test suite (`cargo test`, `npm test`, `pytest`, `go test`). Non-zero exit on failure.</td>
+          </tr>
+          <tr>
+            <td><strong>secrets</strong></td>
+            <td><span class="badge-critical">CRITICAL</span></td>
+            <td>Scans codebase for hardcoded API tokens, private keys, AWS secrets & high-entropy strings.</td>
+          </tr>
+          <tr>
+            <td><strong>TODOs</strong></td>
+            <td><span class="badge-normal">NOTICE</span></td>
+            <td>Scans for unresolved `TODO`, `FIXME`, `HACK`, and `XXX` annotations.</td>
+          </tr>
+          <tr>
+            <td><strong>console.logs</strong></td>
+            <td><span class="badge-normal">NOTICE</span></td>
+            <td>Finds leftover debug statements (`console.log`, `dbg!`, `print(`).</td>
+          </tr>
+          <tr>
+            <td><strong>feature flags</strong></td>
+            <td><span class="badge-normal">NOTICE</span></td>
+            <td>Detects unmerged temporary feature flags and toggles.</td>
+          </tr>
+          <tr>
+            <td><strong>migrations</strong></td>
+            <td><span class="badge-normal">NOTICE</span></td>
+            <td>Audits database migration sync status (Prisma, Diesel, Alembic, etc).</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Footer Specs -->
+    <footer class="manual-footer">
+      <div class="footer-stamp">DORB-AI / DOMINICOT MICRO-TOOLS PROGRAM</div>
+      <div>LICENSE: MIT // RUST 2021 EDITION</div>
+    </footer>
+  </main>
+
+</body>
+</html>
