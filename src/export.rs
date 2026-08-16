@@ -2,8 +2,8 @@ use anyhow::Result;
 use std::fs;
 use std::path::Path;
 
-use crate::project::Project;
 use crate::checks::CheckResult;
+use crate::project::Project;
 
 #[derive(serde::Serialize)]
 struct ExportProject {
@@ -78,13 +78,16 @@ mod tests {
     use super::*;
     use crate::checks::CheckResult;
     use crate::checks::CheckStatus;
-    use crate::project::ProjectKind;
     use crate::project::Project;
+    use crate::project::ProjectKind;
     use std::path::PathBuf;
 
     #[test]
     fn json_serializes_project_and_results() {
-        let project = Project { kind: ProjectKind::Rust, root: Some(PathBuf::from("/repo")) };
+        let project = Project {
+            kind: ProjectKind::Rust,
+            root: Some(PathBuf::from("/repo")),
+        };
         let results = vec![CheckResult::pass_with("tests", "all good")];
         let s = to_json_string(&project, &results).expect("serialize");
         assert!(s.contains("project"));
@@ -94,7 +97,10 @@ mod tests {
 
     #[test]
     fn markdown_contains_expected_sections() {
-        let project = Project { kind: ProjectKind::Rust, root: Some(PathBuf::from("/repo")) };
+        let project = Project {
+            kind: ProjectKind::Rust,
+            root: Some(PathBuf::from("/repo")),
+        };
         let results = vec![CheckResult::warn("todos", "2 found")];
         let md = to_markdown_string(&project, &results);
         assert!(md.contains("**Project:** Rust"));

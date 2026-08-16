@@ -7,10 +7,11 @@ pub fn run(project: &Project, _verbose: bool) -> CheckResult {
 
     let version = match project.kind {
         ProjectKind::Rust => project::read_cargo_toml_version(root),
-        ProjectKind::Node => {
-            project::read_package_json(root)
-                .and_then(|pkg| pkg.get("version").and_then(|v| v.as_str()).map(|s| s.to_string()))
-        }
+        ProjectKind::Node => project::read_package_json(root).and_then(|pkg| {
+            pkg.get("version")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+        }),
         ProjectKind::Python => {
             // Try pyproject.toml
             let pyproject = root.join("pyproject.toml");
@@ -54,10 +55,7 @@ pub fn run(project: &Project, _verbose: bool) -> CheckResult {
             if clean_v == clean_g {
                 CheckResult::pass_with("version", format!("{} (matches tag)", v))
             } else {
-                CheckResult::warn(
-                    "version",
-                    format!("package={} tag={}", v, g),
-                )
+                CheckResult::warn("version", format!("package={} tag={}", v, g))
             }
         }
         (Some(v), None) => CheckResult::pass_with("version", v),

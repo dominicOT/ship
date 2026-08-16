@@ -10,9 +10,9 @@ pub fn run(project: &Project, verbose: bool) -> CheckResult {
     let mut findings: Vec<String> = Vec::new();
 
     let text_exts = [
-        "rs", "js", "ts", "jsx", "tsx", "py", "go", "java", "kt", "rb", "php", "c", "cpp",
-        "h", "hpp", "cs", "swift", "yml", "yaml", "toml", "md", "txt", "sh", "sql", "vue",
-        "svelte", "graphql",
+        "rs", "js", "ts", "jsx", "tsx", "py", "go", "java", "kt", "rb", "php", "c", "cpp", "h",
+        "hpp", "cs", "swift", "yml", "yaml", "toml", "md", "txt", "sh", "sql", "vue", "svelte",
+        "graphql",
     ];
 
     for entry in walk_source_files(root) {

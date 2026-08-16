@@ -1,6 +1,6 @@
-use std::path::Path;
 use std::env;
-use walkdir::{WalkDir, DirEntry};
+use std::path::Path;
+use walkdir::{DirEntry, WalkDir};
 
 pub fn command_exists(cmd: &str) -> bool {
     if let Ok(path) = env::var("PATH") {
@@ -16,9 +16,21 @@ pub fn command_exists(cmd: &str) -> bool {
 
 pub fn walk_source_files(root: &Path) -> impl Iterator<Item = DirEntry> {
     let skip_dirs = [
-        "node_modules", "target", "dist", "build", ".git", "vendor",
-        "__pycache__", ".venv", "venv", ".next", ".nuxt", "coverage",
-        "Pods", ".idea", ".vscode",
+        "node_modules",
+        "target",
+        "dist",
+        "build",
+        ".git",
+        "vendor",
+        "__pycache__",
+        ".venv",
+        "venv",
+        ".next",
+        ".nuxt",
+        "coverage",
+        "Pods",
+        ".idea",
+        ".vscode",
     ];
 
     WalkDir::new(root)

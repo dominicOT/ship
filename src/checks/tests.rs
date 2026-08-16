@@ -50,11 +50,7 @@ pub fn run(project: &Project, verbose: bool) -> CheckResult {
                     let stderr = String::from_utf8_lossy(&output.stderr);
                     let stdout = String::from_utf8_lossy(&output.stdout);
                     let combined = format!("{}\n{}", stdout, stderr);
-                    let snippet: String = combined
-                        .lines()
-                        .take(8)
-                        .collect::<Vec<_>>()
-                        .join("\n");
+                    let snippet: String = combined.lines().take(8).collect::<Vec<_>>().join("\n");
                     return CheckResult::fail("tests", "failed").with_extra(snippet);
                 }
                 CheckResult::fail("tests", "failed")

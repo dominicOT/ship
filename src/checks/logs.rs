@@ -9,21 +9,39 @@ pub fn run(project: &Project, verbose: bool) -> CheckResult {
 
     let patterns: Vec<(&str, Regex)> = match project.kind {
         ProjectKind::Node | ProjectKind::Unknown => vec![
-            ("console.log", Regex::new(r"\bconsole\.(log|debug|info|trace)\s*\(").unwrap()),
+            (
+                "console.log",
+                Regex::new(r"\bconsole\.(log|debug|info|trace)\s*\(").unwrap(),
+            ),
             ("debugger", Regex::new(r"\bdebugger\s*;").unwrap()),
         ],
         ProjectKind::Rust => vec![
             ("dbg!", Regex::new(r"\bdbg!\s*\(").unwrap()),
-            ("debug println!", Regex::new(r#"(?i)\bprintln!\s*\(\s*".*(?:debug|todo|temp|FIXME|XXX)"#).unwrap()),
+            (
+                "debug println!",
+                Regex::new(r#"(?i)\bprintln!\s*\(\s*".*(?:debug|todo|temp|FIXME|XXX)"#).unwrap(),
+            ),
         ],
         ProjectKind::Python => vec![
             ("print(", Regex::new(r"\bprint\s*\(").unwrap()),
-            ("breakpoint()", Regex::new(r"\bbreakpoint\s*\(\s*\)").unwrap()),
-            ("pdb", Regex::new(r"\bimport\s+pdb\b|\bpdb\.set_trace\s*\(").unwrap()),
+            (
+                "breakpoint()",
+                Regex::new(r"\bbreakpoint\s*\(\s*\)").unwrap(),
+            ),
+            (
+                "pdb",
+                Regex::new(r"\bimport\s+pdb\b|\bpdb\.set_trace\s*\(").unwrap(),
+            ),
         ],
         ProjectKind::Go => vec![
-            ("fmt.Print", Regex::new(r"\bfmt\.(Print|Printf|Println)\s*\(").unwrap()),
-            ("log.Print", Regex::new(r"\blog\.(Print|Printf|Println)\s*\(").unwrap()),
+            (
+                "fmt.Print",
+                Regex::new(r"\bfmt\.(Print|Printf|Println)\s*\(").unwrap(),
+            ),
+            (
+                "log.Print",
+                Regex::new(r"\blog\.(Print|Printf|Println)\s*\(").unwrap(),
+            ),
         ],
     };
 
@@ -60,7 +78,10 @@ pub fn run(project: &Project, verbose: bool) -> CheckResult {
             for (label, re) in &patterns {
                 for (i, line) in content.lines().enumerate() {
                     let trimmed = line.trim_start();
-                    if trimmed.starts_with("//") || trimmed.starts_with('#') || trimmed.starts_with("/*") {
+                    if trimmed.starts_with("//")
+                        || trimmed.starts_with('#')
+                        || trimmed.starts_with("/*")
+                    {
                         continue;
                     }
                     if re.is_match(line) {
@@ -71,7 +92,13 @@ pub fn run(project: &Project, verbose: bool) -> CheckResult {
                         } else {
                             snippet.to_string()
                         };
-                        findings.push(format!("{}:{}  {} — {}", rel.display(), i + 1, label, snippet));
+                        findings.push(format!(
+                            "{}:{}  {} — {}",
+                            rel.display(),
+                            i + 1,
+                            label,
+                            snippet
+                        ));
                         if findings.len() >= 25 {
                             break;
                         }

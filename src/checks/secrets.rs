@@ -52,14 +52,14 @@ pub fn run(project: &Project, verbose: bool) -> CheckResult {
     let mut findings: Vec<String> = Vec::new();
 
     let skip_exts = [
-        ".png", ".jpg", ".jpeg", ".gif", ".ico", ".svg", ".woff", ".woff2", ".ttf", ".eot",
-        ".mp4", ".mp3", ".zip", ".tar", ".gz", ".lock", ".min.js", ".min.css",
+        ".png", ".jpg", ".jpeg", ".gif", ".ico", ".svg", ".woff", ".woff2", ".ttf", ".eot", ".mp4",
+        ".mp3", ".zip", ".tar", ".gz", ".lock", ".min.js", ".min.css",
     ];
 
     let text_exts = [
-        "rs", "js", "ts", "jsx", "tsx", "py", "go", "java", "kt", "rb", "php", "c", "cpp",
-        "h", "hpp", "cs", "swift", "env", "yml", "yaml", "toml", "json", "md", "txt",
-        "sh", "bash", "zsh", "sql", "graphql", "vue", "svelte",
+        "rs", "js", "ts", "jsx", "tsx", "py", "go", "java", "kt", "rb", "php", "c", "cpp", "h",
+        "hpp", "cs", "swift", "env", "yml", "yaml", "toml", "json", "md", "txt", "sh", "bash",
+        "zsh", "sql", "graphql", "vue", "svelte",
     ];
 
     for entry in walk_source_files(root) {

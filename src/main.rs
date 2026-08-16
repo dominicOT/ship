@@ -1,14 +1,14 @@
 use anyhow::{Context, Result};
 use clap::Parser;
 use colored::*;
-use std::fs;
+// use std::fs;
 use std::path::PathBuf;
 use std::process::ExitCode;
 
 mod checks;
-mod util;
-mod project;
 mod export;
+mod project;
+mod util;
 
 use checks::{CheckResult, CheckStatus};
 use project::Project;
@@ -126,12 +126,14 @@ fn run() -> Result<bool> {
 
     if cli.json.is_some() || cli.md.is_some() {
         if let Some(path) = cli.json.as_ref() {
-            export::write_json(path.as_path(), &project, &results).context("Failed to write JSON report")?;
+            export::write_json(path.as_path(), &project, &results)
+                .context("Failed to write JSON report")?;
             println!("Wrote JSON report to {}", path.display());
         }
 
         if let Some(path) = cli.md.as_ref() {
-            export::write_markdown(path.as_path(), &project, &results).context("Failed to write Markdown report")?;
+            export::write_markdown(path.as_path(), &project, &results)
+                .context("Failed to write Markdown report")?;
             println!("Wrote Markdown report to {}", path.display());
         }
     }
@@ -140,7 +142,9 @@ fn run() -> Result<bool> {
         .iter()
         .any(|r| matches!(r.status, CheckStatus::Fail) && r.critical);
 
-    let any_failed = results.iter().any(|r| matches!(r.status, CheckStatus::Fail));
+    let any_failed = results
+        .iter()
+        .any(|r| matches!(r.status, CheckStatus::Fail));
 
     if critical_failed && !cli.dry_run {
         println!("{}", "✗ Not ready to ship".red().bold());

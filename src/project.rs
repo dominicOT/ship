@@ -1,6 +1,6 @@
 use anyhow::Result;
-use std::path::{Path, PathBuf};
 use std::fs;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ProjectKind {

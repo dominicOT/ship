@@ -26,7 +26,8 @@ pub fn run(project: &Project, _verbose: bool) -> CheckResult {
     let mut flag_mentions = 0;
 
     let text_exts = [
-        "rs", "js", "ts", "jsx", "tsx", "py", "go", "java", "kt", "rb", "yml", "yaml", "toml", "json",
+        "rs", "js", "ts", "jsx", "tsx", "py", "go", "java", "kt", "rb", "yml", "yaml", "toml",
+        "json",
     ];
 
     for entry in walk_source_files(root) {
@@ -62,7 +63,13 @@ pub fn run(project: &Project, _verbose: bool) -> CheckResult {
                         } else {
                             snippet.to_string()
                         };
-                        findings.push(format!("{}:{}  {} — {}", rel.display(), i + 1, label, snippet));
+                        findings.push(format!(
+                            "{}:{}  {} — {}",
+                            rel.display(),
+                            i + 1,
+                            label,
+                            snippet
+                        ));
                         if findings.len() >= 15 {
                             break;
                         }
@@ -77,7 +84,10 @@ pub fn run(project: &Project, _verbose: bool) -> CheckResult {
 
     if findings.is_empty() {
         if flag_mentions > 0 {
-            CheckResult::pass_with("feature flags", format!("detected ({} files)", flag_mentions))
+            CheckResult::pass_with(
+                "feature flags",
+                format!("detected ({} files)", flag_mentions),
+            )
         } else {
             CheckResult::skip("feature flags", "none detected")
         }

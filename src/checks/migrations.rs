@@ -57,7 +57,14 @@ pub fn run(project: &Project, _verbose: bool) -> CheckResult {
     let has_tool = match project.kind {
         ProjectKind::Node => {
             if let Some(pkg) = crate::project::read_package_json(root) {
-                let deps = ["prisma", "knex", "typeorm", "sequelize", "drizzle-orm", "mikro-orm"];
+                let deps = [
+                    "prisma",
+                    "knex",
+                    "typeorm",
+                    "sequelize",
+                    "drizzle-orm",
+                    "mikro-orm",
+                ];
                 let all_deps = pkg
                     .get("dependencies")
                     .into_iter()
@@ -73,14 +80,16 @@ pub fn run(project: &Project, _verbose: bool) -> CheckResult {
         ProjectKind::Rust => {
             // diesel, sqlx, sea-orm in Cargo.toml
             if let Ok(content) = fs::read_to_string(root.join("Cargo.toml")) {
-                content.contains("diesel") || content.contains("sqlx") || content.contains("sea-orm")
+                content.contains("diesel")
+                    || content.contains("sqlx")
+                    || content.contains("sea-orm")
             } else {
                 false
             }
         }
         ProjectKind::Python => {
-            root.join("alembic.ini").exists()
-                || root.join("manage.py").exists() // Django
+            root.join("alembic.ini").exists() || root.join("manage.py").exists()
+            // Django
         }
         _ => false,
     };

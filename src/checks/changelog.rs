@@ -53,7 +53,13 @@ pub fn run(project: &Project, _verbose: bool) -> CheckResult {
 
     let changed_since_tag = if let Some(ref tag) = last_tag {
         Command::new("git")
-            .args(["diff", "--name-only", &format!("{}..HEAD", tag), "--", &changelog_name])
+            .args([
+                "diff",
+                "--name-only",
+                &format!("{}..HEAD", tag),
+                "--",
+                &changelog_name,
+            ])
             .current_dir(root)
             .output()
             .ok()
@@ -69,7 +75,11 @@ pub fn run(project: &Project, _verbose: bool) -> CheckResult {
     } else if last_tag.is_some() {
         CheckResult::warn(
             "changelog",
-            format!("{} — may need update since {}", changelog_name, last_tag.unwrap()),
+            format!(
+                "{} — may need update since {}",
+                changelog_name,
+                last_tag.unwrap()
+            ),
         )
     } else {
         CheckResult::pass_with("changelog", changelog_name)
