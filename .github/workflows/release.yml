@@ -60,13 +60,19 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: ./dist
-      - name: Show downloaded dist
+          merge-multiple: true
+      - name: Validate downloaded artifacts
         run: |
           echo "Downloaded files:"
           ls -la dist || true
+          for file in dist/*.tar.gz; do
+            echo "Checking $file"
+            tar -tzf "$file" | head
+          done
       - name: Create release and upload assets
         uses: softprops/action-gh-release@v2
         with:
           files: dist/*.tar.gz
           draft: false
+          fail_on_unmatched_files: true
 
