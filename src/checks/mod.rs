@@ -7,7 +7,10 @@ pub mod tests;
 pub mod todos;
 pub mod version;
 
-#[derive(Debug, Clone, PartialEq)]
+use serde::Serialize;
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "lowercase")]
 pub enum CheckStatus {
     Pass,
     Fail,
@@ -15,7 +18,7 @@ pub enum CheckStatus {
     Skip,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct CheckResult {
     pub name: String,
     pub status: CheckStatus,
