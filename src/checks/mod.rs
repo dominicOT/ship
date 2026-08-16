@@ -28,6 +28,7 @@ pub struct CheckResult {
 }
 
 impl CheckResult {
+    #[allow(dead_code)]
     pub fn pass(name: &str) -> Self {
         Self {
             name: name.to_string(),
