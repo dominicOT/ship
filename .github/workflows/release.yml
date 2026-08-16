@@ -20,6 +20,8 @@ jobs:
             asset: ship-linux-aarch64.tar.gz
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
@@ -34,6 +36,12 @@ jobs:
         run: |
           mkdir -p dist
           tar -C "target/${{ matrix.target }}/release" -czf "dist/${{ matrix.asset }}" ship
+      - name: Show dist contents
+        run: |
+          echo "Dist listing:"
+          ls -la dist || true
+          echo "Tar contents (if present):"
+          tar -tzf dist/${{ matrix.asset }} || true
       - uses: softprops/action-gh-release@v2
         with:
           files: dist/${{ matrix.asset }}
