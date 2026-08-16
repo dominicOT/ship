@@ -81,6 +81,21 @@ ship --skip todos,logs  # skip specific checks
 ship --only secrets,tests
 ```
 
+## Exporting reports
+
+You can export the report as JSON or Markdown for later inspection or to feed into an agent:
+
+```bash
+ship --json            # writes ship-report.json by default
+ship --md              # writes ship-report.md by default
+ship --json out.json   # write JSON to a specific path
+ship --md report.md    # write Markdown to a specific path
+ship --json --md       # write both default files
+```
+
+When `--json` or `--md` are provided without a path, the CLI defaults to `ship-report.json` and `ship-report.md` respectively.
+
+
 ## Supported project types
 
 - **Rust** (`Cargo.toml`)
