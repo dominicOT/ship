@@ -6,3 +6,5 @@ ship-linux-x86_64.tar.gz
 # Report files
 ship-report.md
 ship-report.json
+
+*.png
