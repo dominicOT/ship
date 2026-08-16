@@ -77,7 +77,7 @@ pub fn write_markdown(path: &Path, project: &Project, results: &Vec<CheckResult>
 mod tests {
     use super::*;
     use crate::checks::CheckResult;
-    use crate::checks::CheckStatus;
+    // use crate::checks::CheckStatus;
     use crate::project::Project;
     use crate::project::ProjectKind;
     use std::path::PathBuf;

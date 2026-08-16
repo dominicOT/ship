@@ -6,7 +6,8 @@ use std::fs;
 
 pub fn run(project: &Project, verbose: bool) -> CheckResult {
     let root = project.root_path();
-    let re = Regex::new(r"(?i)\b(TODO|FIXME|XXX|HACK)\b[:\s]").unwrap();
+    // Match TODO/FIXME/XXX/HACK when they appear in common comment syntaxes
+    let re = Regex::new(r"(?i)(?://|/\*|#|<!--)\s*(TODO|FIXME|XXX|HACK)\b[:\s]").unwrap();
     let mut findings: Vec<String> = Vec::new();
 
     let text_exts = [
