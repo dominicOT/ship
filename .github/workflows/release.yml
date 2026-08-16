@@ -64,25 +64,9 @@ jobs:
         run: |
           echo "Downloaded files:"
           ls -la dist || true
-      - name: Create or update draft release and upload assets
+      - name: Create release and upload assets
         uses: softprops/action-gh-release@v2
         with:
           files: dist/*.tar.gz
-          draft: true
-      - name: Publish release (clear draft)
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          tag=${{ github.ref_name }}
-          repo=${{ github.repository }}
-          echo "Finding release for tag $tag in $repo"
-          release_json=$(curl -s -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/$repo/releases/tags/$tag")
-          release_id=$(echo "$release_json" | jq -r .id)
-          if [ "$release_id" = "null" ] || [ -z "$release_id" ]; then
-            echo "Release not found; exiting"
-            exit 1
-          fi
-          echo "Publishing release id=$release_id"
-          curl -s -X PATCH -H "Authorization: token $GITHUB_TOKEN" -H "Content-Type: application/json" \
-            -d '{"draft":false}' "https://api.github.com/repos/$repo/releases/$release_id"
+          draft: false
 
