@@ -1,7 +1,6 @@
 use anyhow::{Context, Result};
 use clap::Parser;
 use colored::*;
-use serde::Serialize;
 use std::fs;
 use std::path::PathBuf;
 use std::process::ExitCode;
@@ -9,6 +8,7 @@ use std::process::ExitCode;
 mod checks;
 mod util;
 mod project;
+mod export;
 
 use checks::{CheckResult, CheckStatus};
 use project::Project;
@@ -125,62 +125,13 @@ fn run() -> Result<bool> {
     println!();
 
     if cli.json.is_some() || cli.md.is_some() {
-        #[derive(Serialize)]
-        struct ExportProject {
-            kind: String,
-            root: Option<String>,
-        }
-
-        #[derive(Serialize)]
-        struct ExportReport<'a> {
-            project: ExportProject,
-            results: &'a Vec<CheckResult>,
-        }
-
-        let exp_project = ExportProject {
-            kind: project.kind.to_string(),
-            root: project.root.as_ref().map(|p| p.display().to_string()),
-        };
-
-        let report = ExportReport {
-            project: exp_project,
-            results: &results,
-        };
-
         if let Some(path) = cli.json.as_ref() {
-            let s = serde_json::to_string_pretty(&report).context("Failed to serialize JSON report")?;
-            fs::write(path, s).context("Failed to write JSON report")?;
+            export::write_json(path.as_path(), &project, &results).context("Failed to write JSON report")?;
             println!("Wrote JSON report to {}", path.display());
         }
 
         if let Some(path) = cli.md.as_ref() {
-            let mut md = String::new();
-            md.push_str("# ship report\n\n");
-            md.push_str(&format!("**Project:** {}\n\n", project.kind));
-            if let Some(ref root) = project.root {
-                md.push_str(&format!("**Root:** {}\n\n", root.display()));
-            }
-            md.push_str("## Checks\n\n");
-
-            for r in &results {
-                let status = match &r.status {
-                    CheckStatus::Pass => "pass",
-                    CheckStatus::Fail => "fail",
-                    CheckStatus::Warn => "warn",
-                    CheckStatus::Skip => "skip",
-                };
-                md.push_str(&format!("- **{}** — {}\n", r.name, status));
-                if let Some(ref d) = r.detail {
-                    md.push_str(&format!("  - {}\n", d));
-                }
-                if let Some(ref e) = r.extra {
-                    md.push_str("\n```");
-                    md.push_str(e);
-                    md.push_str("```\n\n");
-                }
-            }
-
-            fs::write(path, md).context("Failed to write Markdown report")?;
+            export::write_markdown(path.as_path(), &project, &results).context("Failed to write Markdown report")?;
             println!("Wrote Markdown report to {}", path.display());
         }
     }
