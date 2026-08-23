@@ -3,9 +3,9 @@ use std::path::Path;
 use walkdir::{DirEntry, WalkDir};
 
 pub fn command_exists(cmd: &str) -> bool {
-    if let Ok(path) = env::var("PATH") {
-        for dir in path.split(':') {
-            let p = Path::new(dir).join(cmd);
+    if let Ok(path_var) = env::var("PATH") {
+        for dir in env::split_paths(&path_var) {
+            let p = dir.join(cmd);
             if p.is_file() {
                 return true;
             }
