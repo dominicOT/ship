@@ -40,26 +40,37 @@ Critical failures (tests, secrets) cause a non-zero exit code so you can gate de
 
 ## Install
 
-Install from source:
+### From source
 
 ```bash
 cargo install --path .
 ```
 
-Install a locally built binary:
+### Pre-built binaries — Linux & macOS
 
-```bash
-cargo build --release
-cp target/release/ship ~/.local/bin/
-```
+Install from a GitHub release binary (recommended):
 
-Install from a GitHub release binary:
-
+**Linux x86_64:**
 ```bash
 curl -sSL https://github.com/dominicOT/ship/releases/latest/download/ship-linux-x86_64.tar.gz | tar xz -C ~/.local/bin ship
 ```
 
-Install with the one-line shell installer:
+**Linux ARM64:**
+```bash
+curl -sSL https://github.com/dominicOT/ship/releases/latest/download/ship-linux-aarch64.tar.gz | tar xz -C ~/.local/bin ship
+```
+
+**macOS (Intel):**
+```bash
+curl -sSL https://github.com/dominicOT/ship/releases/latest/download/ship-macos-x86_64.tar.gz | tar xz -C /usr/local/bin ship
+```
+
+**macOS (Apple Silicon):**
+```bash
+curl -sSL https://github.com/dominicOT/ship/releases/latest/download/ship-macos-aarch64.tar.gz | tar xz -C /usr/local/bin ship
+```
+
+Or use the one-line installer:
 
 ```bash
 curl -sSL https://raw.githubusercontent.com/dominicOT/ship/master/scripts/install.sh | bash
@@ -70,6 +81,39 @@ To install to a custom directory:
 ```bash
 curl -sSL https://raw.githubusercontent.com/dominicOT/ship/master/scripts/install.sh | bash -s -- --prefix ~/.local/bin
 ```
+
+### Pre-built binaries — Windows
+
+Run this in PowerShell (or PowerShell Core):
+
+```powershell
+irm https://raw.githubusercontent.com/dominicOT/ship/master/scripts/install.ps1 | iex
+```
+
+Or if you get an execution policy error:
+
+```powershell
+powershell -ExecutionPolicy Bypass -Command "& { irm https://raw.githubusercontent.com/dominicOT/ship/master/scripts/install.ps1 | iex }"
+```
+
+**Windows x86_64 downloads directly from:**
+```
+https://github.com/dominicOT/ship/releases/latest/download/ship-windows-x86_64.zip
+```
+
+Unzip and place `ship.exe` somewhere in your PATH, or run the PowerShell installer above to handle it automatically.
+
+### Supported platforms
+
+| Platform | Architecture | Status |
+|---|---|---|
+| Linux | x86_64 | ✓ |
+| Linux | ARM64 | ✓ |
+| macOS | Intel (x86_64) | ✓ |
+| macOS | Apple Silicon (ARM64) | ✓ |
+| Windows | x86_64 | ✓ |
+
+For other platforms or architectures, install from source with `cargo install --path .`
 
 ## Usage
 
