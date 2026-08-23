@@ -55,14 +55,15 @@ fi
 uname_os=$(uname -s)
 case "$uname_os" in
   Linux) os=linux ;;
-  *) err "Pre-built binaries currently only support Linux. For $uname_os, please install from source with: cargo install --path ." ;;
+  Darwin) os=macos ;;
+  *) err "Unsupported OS: $uname_os. Pre-built binaries are available for Linux and macOS. For other platforms, please install from source with: cargo install --path ." ;;
 esac
 
 uname_arch=$(uname -m)
 case "$uname_arch" in
   x86_64|amd64) arch=x86_64 ;;
   aarch64|arm64) arch=aarch64 ;;
-  *) err "unsupported architecture: $uname_arch" ;;
+  *) err "Unsupported architecture: $uname_arch on $uname_os. Please install from source with: cargo install --path ." ;;
 esac
 
 case "$os" in
