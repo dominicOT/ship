@@ -20,6 +20,10 @@ use project::Project;
     long_about = "Run essential checks before deploying:\n  ✓ tests\n  ✓ secrets\n  ✓ TODOs\n  ✓ console.logs\n  ✓ feature flags\n  ✓ version\n  ✓ migrations\n  ✓ changelog"
 )]
 struct Cli {
+    /// Path to project directory (defaults to current directory)
+    #[arg(long, short = 'p', value_name = "DIR")]
+    project: Option<PathBuf>,
+
     /// Run checks without failing (report only)
     #[arg(long, short = 'n')]
     dry_run: bool,
@@ -55,7 +59,7 @@ fn main() -> ExitCode {
             }
         }
         Err(e) => {
-            eprintln!("{} {}", "error:".red().bold(), e);
+            eprintln!("{} {:#}", "error:".red().bold(), e);
             ExitCode::from(2)
         }
     }
@@ -68,7 +72,8 @@ fn run() -> Result<bool> {
     println!();
     println!("{}", "Checks".bold());
 
-    let project = Project::detect().context("Failed to detect project")?;
+    let project = Project::detect_from_path(cli.project.as_deref())
+        .context("Failed to detect project")?;
 
     if cli.verbose {
         println!("  Project type: {}", project.kind);
