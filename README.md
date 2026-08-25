@@ -118,10 +118,11 @@ For other platforms or architectures, install from source with `cargo install --
 ## Usage
 
 ```bash
-ship                    # run all checks
-ship -v                 # verbose (show details / snippets)
-ship -n                 # dry-run (never fail the process)
-ship --skip todos,logs  # skip specific checks
+ship                            # run all checks in current directory
+ship --project /path/to/project # run checks on a specific project directory (or -p)
+ship -v                         # verbose (show details / snippets)
+ship -n                         # dry-run (never fail the process)
+ship --skip todos,logs          # skip specific checks
 ship --only secrets,tests
 ```
 
