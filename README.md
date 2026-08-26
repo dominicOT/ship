@@ -118,10 +118,11 @@ For other platforms or architectures, install from source with `cargo install --
 ## Usage
 
 ```bash
-ship                    # run all checks
-ship -v                 # verbose (show details / snippets)
-ship -n                 # dry-run (never fail the process)
-ship --skip todos,logs  # skip specific checks
+ship                            # run all checks in current directory
+ship --project /path/to/project # run checks on a specific project directory (or -p)
+ship -v                         # verbose (show details / snippets)
+ship -n                         # dry-run (never fail the process)
+ship --skip todos,logs          # skip specific checks
 ship --only secrets,tests
 ```
 
@@ -138,6 +139,33 @@ ship --json --md       # write both default files
 ```
 
 When `--json` or `--md` are provided without a path, the CLI defaults to `ship-report.json` and `ship-report.md` respectively.
+
+## Git Hook Setup (`ship init`)
+
+Set up Ship as an automatic, committed git `pre-commit` hook for your project:
+
+```bash
+ship init
+# or for a specific project:
+ship init --project /path/to/project
+```
+
+This:
+1. Creates `.githooks/pre-commit` (making it executable).
+2. Configures git to use the shared hooks directory: `git config core.hooksPath .githooks`.
+3. Creates a `.ship.toml` configuration file (if not already present).
+
+Commit the hooks so your entire team gets them:
+```bash
+git add .githooks .ship.toml
+git commit -m "chore: add ship pre-commit hook"
+```
+
+Teammates who clone the repository just need to enable the hooks once:
+```bash
+git config core.hooksPath .githooks
+```
+
 
 
 ## Supported project types

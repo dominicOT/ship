@@ -30,19 +30,41 @@ pub struct Project {
 }
 
 impl Project {
+    #[allow(dead_code)]
     pub fn detect() -> Result<Self> {
-        let cwd = std::env::current_dir()?;
-        let root = find_project_root(&cwd);
+        Self::detect_from_path(None)
+    }
+
+    #[allow(dead_code)]
+    pub fn detect_from(path: &Path) -> Result<Self> {
+        Self::detect_from_path(Some(path))
+    }
+
+    pub fn detect_from_path(path: Option<&Path>) -> Result<Self> {
+        let base_path = match path {
+            Some(p) => {
+                if !p.exists() {
+                    anyhow::bail!("Project directory does not exist: {}", p.display());
+                }
+                if !p.is_dir() {
+                    anyhow::bail!("Project path is not a directory: {}", p.display());
+                }
+                p.canonicalize().unwrap_or_else(|_| p.to_path_buf())
+            }
+            None => std::env::current_dir()?,
+        };
+
+        let root = find_project_root(&base_path);
 
         let kind = if let Some(ref r) = root {
             detect_kind(r)
         } else {
-            detect_kind(&cwd)
+            detect_kind(&base_path)
         };
 
         Ok(Project {
             kind,
-            root: root.or(Some(cwd)),
+            root: root.or(Some(base_path)),
         })
     }
 
@@ -105,4 +127,61 @@ pub fn read_cargo_toml_version(root: &Path) -> Option<String> {
         }
     }
     None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs::File;
+
+    #[test]
+    fn detect_from_current_dir() {
+        let project = Project::detect().expect("detect current project");
+        assert_eq!(project.kind, ProjectKind::Rust);
+        assert!(project.root.is_some());
+    }
+
+    #[test]
+    fn detect_from_valid_custom_path() {
+        let temp_dir = std::env::temp_dir().join(format!("ship_test_project_{}", std::process::id()));
+        let _ = fs::remove_dir_all(&temp_dir);
+        fs::create_dir_all(&temp_dir).expect("create temp dir");
+
+        File::create(temp_dir.join("package.json")).expect("create package.json");
+
+        let project = Project::detect_from(&temp_dir).expect("detect project");
+        assert_eq!(project.kind, ProjectKind::Node);
+        assert_eq!(
+            project.root_path(),
+            temp_dir.canonicalize().unwrap_or(temp_dir.clone())
+        );
+
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn detect_from_nonexistent_path_fails() {
+        let nonexistent = Path::new("/path/that/does/not/exist_ship_12345");
+        let result = Project::detect_from(nonexistent);
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("does not exist"));
+    }
+
+    #[test]
+    fn detect_from_file_fails() {
+        let temp_file = std::env::temp_dir().join(format!("ship_test_file_{}", std::process::id()));
+        File::create(&temp_file).expect("create file");
+
+        let result = Project::detect_from(&temp_file);
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("not a directory"));
+
+        let _ = fs::remove_file(&temp_file);
+    }
 }
