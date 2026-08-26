@@ -1,12 +1,14 @@
 use anyhow::{Context, Result};
-use clap::Parser;
+use clap::{Parser, Subcommand};
 use colored::*;
 // use std::fs;
 use std::path::PathBuf;
 use std::process::ExitCode;
 
 mod checks;
+mod config;
 mod export;
+mod init;
 mod project;
 mod util;
 
@@ -20,8 +22,11 @@ use project::Project;
     long_about = "Run essential checks before deploying:\n  ✓ tests\n  ✓ secrets\n  ✓ TODOs\n  ✓ console.logs\n  ✓ feature flags\n  ✓ version\n  ✓ migrations\n  ✓ changelog"
 )]
 struct Cli {
+    #[command(subcommand)]
+    command: Option<Commands>,
+
     /// Path to project directory (defaults to current directory)
-    #[arg(long, short = 'p', value_name = "DIR")]
+    #[arg(long, short = 'p', value_name = "DIR", global = true)]
     project: Option<PathBuf>,
 
     /// Run checks without failing (report only)
@@ -49,6 +54,24 @@ struct Cli {
     md: Option<PathBuf>,
 }
 
+#[derive(Subcommand, Debug)]
+enum Commands {
+    /// Install ship as a committed git pre-commit hook
+    Init {
+        /// Custom hook directory (defaults to .githooks)
+        #[arg(long, default_value = ".githooks")]
+        hook_dir: String,
+
+        /// Overwrite existing pre-commit hook if present
+        #[arg(long, short = 'f')]
+        force: bool,
+
+        /// Do not create .ship.toml config file
+        #[arg(long)]
+        no_config: bool,
+    },
+}
+
 fn main() -> ExitCode {
     match run() {
         Ok(success) => {
@@ -68,12 +91,29 @@ fn main() -> ExitCode {
 fn run() -> Result<bool> {
     let cli = Cli::parse();
 
+    let project = Project::detect_from_path(cli.project.as_deref())
+        .context("Failed to detect project")?;
+
+    if let Some(Commands::Init {
+        ref hook_dir,
+        force,
+        no_config,
+    }) = cli.command
+    {
+        init::run(
+            project.root_path(),
+            &init::InitOptions {
+                hook_dir,
+                force,
+                no_config,
+            },
+        )?;
+        return Ok(true);
+    }
+
     println!("{}", "ship".bold().cyan());
     println!();
     println!("{}", "Checks".bold());
-
-    let project = Project::detect_from_path(cli.project.as_deref())
-        .context("Failed to detect project")?;
 
     if cli.verbose {
         println!("  Project type: {}", project.kind);
@@ -82,6 +122,20 @@ fn run() -> Result<bool> {
         }
         println!();
     }
+
+    let config = config::ShipConfig::load_from_dir(project.root_path()).unwrap_or_default();
+
+    let effective_skip = if !cli.skip.is_empty() {
+        cli.skip
+    } else {
+        config.skip
+    };
+
+    let effective_only = if !cli.only.is_empty() {
+        cli.only
+    } else {
+        config.only
+    };
 
     let mut results: Vec<CheckResult> = Vec::new();
 
@@ -96,16 +150,16 @@ fn run() -> Result<bool> {
         "changelog",
     ];
 
-    let to_run: Vec<&str> = if !cli.only.is_empty() {
+    let to_run: Vec<&str> = if !effective_only.is_empty() {
         all_checks
             .iter()
-            .filter(|c| cli.only.iter().any(|o| o.eq_ignore_ascii_case(c)))
+            .filter(|c| effective_only.iter().any(|o| o.eq_ignore_ascii_case(c)))
             .copied()
             .collect()
     } else {
         all_checks
             .iter()
-            .filter(|c| !cli.skip.iter().any(|s| s.eq_ignore_ascii_case(c)))
+            .filter(|c| !effective_skip.iter().any(|s| s.eq_ignore_ascii_case(c)))
             .copied()
             .collect()
     };
