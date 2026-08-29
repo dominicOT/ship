@@ -10,6 +10,7 @@ mod config;
 mod export;
 mod init;
 mod project;
+mod update;
 mod util;
 
 use checks::{CheckResult, CheckStatus};
@@ -70,6 +71,17 @@ enum Commands {
         #[arg(long)]
         no_config: bool,
     },
+
+    /// Update ship to the latest GitHub release
+    Update {
+        /// Only check whether an update is available, don't install it
+        #[arg(long)]
+        check: bool,
+
+        /// Reinstall the latest release even if already up to date
+        #[arg(long, short = 'f')]
+        force: bool,
+    },
 }
 
 fn main() -> ExitCode {
@@ -90,6 +102,11 @@ fn main() -> ExitCode {
 
 fn run() -> Result<bool> {
     let cli = Cli::parse();
+
+    if let Some(Commands::Update { check, force }) = cli.command {
+        update::run(&update::UpdateOptions { check, force })?;
+        return Ok(true);
+    }
 
     let project = Project::detect_from_path(cli.project.as_deref())
         .context("Failed to detect project")?;

@@ -1,0 +1,8 @@
+# .ship.toml — Configuration for ship
+# Documentation: https://github.com/dominicOT/ship
+
+# Checks to skip by default (e.g. tests, secrets, todos, logs, flags, version, migrations, changelog)
+# skip = ["tests"]
+
+# Only run specific checks
+# only = ["secrets", "todos"]

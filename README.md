@@ -166,7 +166,17 @@ Teammates who clone the repository just need to enable the hooks once:
 git config core.hooksPath .githooks
 ```
 
+## Updating (`ship update`)
 
+If you installed ship from a pre-built binary, keep it up to date in place:
+
+```bash
+ship update          # download and install the latest release
+ship update --check  # only check whether an update is available
+ship update --force  # reinstall the latest release even if already up to date
+```
+
+Requires `curl` (and `tar` on Linux/macOS, `unzip` on Windows). If you installed via `cargo install --path .`, reinstall from source instead.
 
 ## Supported project types
 
