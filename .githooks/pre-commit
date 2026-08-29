@@ -1,0 +1,7 @@
+#!/bin/sh
+# .githooks/pre-commit — managed by ship
+if ! command -v ship >/dev/null 2>&1; then
+  echo "ship is not installed. See https://github.com/dominicOT/ship"
+  exit 1
+fi
+exec ship --skip tests
