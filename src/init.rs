@@ -1,19 +1,27 @@
-use anyhow::{Context, Result};
+use anyhow::{bail, Context, Result};
 use colored::*;
 use std::fs;
 use std::path::Path;
 use std::process::Command;
+
+use crate::checks::ALL_CHECKS;
 
 pub struct InitOptions<'a> {
     pub hook_dir: &'a str,
     #[allow(dead_code)]
     pub force: bool,
     pub no_config: bool,
+    pub skip: &'a [String],
+    pub only: &'a [String],
+    pub all: bool,
 }
 
 pub fn run(root: &Path, options: &InitOptions) -> Result<()> {
     println!("{}", "ship init".bold().cyan());
     println!();
+
+    validate_checks("--skip", options.skip)?;
+    validate_checks("--only", options.only)?;
 
     // 1. Create hooks directory (e.g. .githooks)
     let hooks_dir = root.join(options.hook_dir);
@@ -24,9 +32,22 @@ pub fn run(root: &Path, options: &InitOptions) -> Result<()> {
     let hook_path = hooks_dir.join("pre-commit");
     let hook_exists = hook_path.exists();
 
-    let hook_content = "#!/bin/sh\n# .githooks/pre-commit — managed by ship\nif ! command -v ship >/dev/null 2>&1; then\n  echo \"ship is not installed. See https://github.com/dominicOT/ship\"\n  exit 1\nfi\nexec ship --skip tests\n";
+    let ship_invocation = if !options.only.is_empty() {
+        format!("ship --only {}", options.only.join(","))
+    } else if !options.skip.is_empty() {
+        format!("ship --skip {}", options.skip.join(","))
+    } else if options.all {
+        "ship".to_string()
+    } else {
+        // Default: skip the (usually slow) test suite in the hook.
+        "ship --skip tests".to_string()
+    };
 
-    fs::write(&hook_path, hook_content)
+    let hook_content = format!(
+        "#!/bin/sh\n# .githooks/pre-commit — managed by ship\nif ! command -v ship >/dev/null 2>&1; then\n  echo \"ship is not installed. See https://github.com/dominicOT/ship\"\n  exit 1\nfi\nexec {ship_invocation}\n"
+    );
+
+    fs::write(&hook_path, &hook_content)
         .with_context(|| format!("Failed to write hook file: {}", hook_path.display()))?;
 
     // Set executable permissions on Unix
@@ -46,6 +67,7 @@ pub fn run(root: &Path, options: &InitOptions) -> Result<()> {
     } else {
         println!("  {} Created {}", "✓".green(), hook_display);
     }
+    println!("      runs: {}", ship_invocation.dimmed());
 
     // 3. Configure git core.hooksPath
     let is_git_repo = is_inside_git_repo(root);
@@ -106,6 +128,18 @@ pub fn run(root: &Path, options: &InitOptions) -> Result<()> {
     Ok(())
 }
 
+fn validate_checks(flag: &str, checks: &[String]) -> Result<()> {
+    for check in checks {
+        if !ALL_CHECKS.iter().any(|c| c.eq_ignore_ascii_case(check)) {
+            bail!(
+                "Unknown check '{check}' passed to {flag}. Valid checks: {}",
+                ALL_CHECKS.join(", ")
+            );
+        }
+    }
+    Ok(())
+}
+
 fn is_inside_git_repo(dir: &Path) -> bool {
     if dir.join(".git").exists() {
         return true;
@@ -132,6 +166,9 @@ mod tests {
             hook_dir: ".githooks",
             force: false,
             no_config: false,
+            skip: &[],
+            only: &[],
+            all: false,
         };
 
         let res = run(&temp_dir, &options);
@@ -159,6 +196,9 @@ mod tests {
             hook_dir: ".githooks",
             force: false,
             no_config: true,
+            skip: &[],
+            only: &[],
+            all: false,
         };
 
         let res = run(&temp_dir, &options);
@@ -169,6 +209,110 @@ mod tests {
 
         let config_file = temp_dir.join(".ship.toml");
         assert!(!config_file.exists());
+
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn init_skip_flag_overrides_default_hook() {
+        let temp_dir =
+            std::env::temp_dir().join(format!("ship_test_init_skip_{}", std::process::id()));
+        let _ = fs::remove_dir_all(&temp_dir);
+        fs::create_dir_all(&temp_dir).expect("create temp dir");
+
+        let skip = vec!["tests".to_string(), "logs".to_string()];
+        let options = InitOptions {
+            hook_dir: ".githooks",
+            force: false,
+            no_config: true,
+            skip: &skip,
+            only: &[],
+            all: false,
+        };
+
+        let res = run(&temp_dir, &options);
+        assert!(res.is_ok());
+
+        let content = fs::read_to_string(temp_dir.join(".githooks/pre-commit")).expect("read hook");
+        assert!(content.contains("exec ship --skip tests,logs"));
+
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn init_only_flag_takes_precedence_over_skip() {
+        let temp_dir =
+            std::env::temp_dir().join(format!("ship_test_init_only_{}", std::process::id()));
+        let _ = fs::remove_dir_all(&temp_dir);
+        fs::create_dir_all(&temp_dir).expect("create temp dir");
+
+        let skip = vec!["tests".to_string()];
+        let only = vec!["secrets".to_string(), "todos".to_string()];
+        let options = InitOptions {
+            hook_dir: ".githooks",
+            force: false,
+            no_config: true,
+            skip: &skip,
+            only: &only,
+            all: false,
+        };
+
+        let res = run(&temp_dir, &options);
+        assert!(res.is_ok());
+
+        let content = fs::read_to_string(temp_dir.join(".githooks/pre-commit")).expect("read hook");
+        assert!(content.contains("exec ship --only secrets,todos"));
+
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn init_all_flag_runs_every_check() {
+        let temp_dir =
+            std::env::temp_dir().join(format!("ship_test_init_all_{}", std::process::id()));
+        let _ = fs::remove_dir_all(&temp_dir);
+        fs::create_dir_all(&temp_dir).expect("create temp dir");
+
+        let options = InitOptions {
+            hook_dir: ".githooks",
+            force: false,
+            no_config: true,
+            skip: &[],
+            only: &[],
+            all: true,
+        };
+
+        let res = run(&temp_dir, &options);
+        assert!(res.is_ok());
+
+        let content = fs::read_to_string(temp_dir.join(".githooks/pre-commit")).expect("read hook");
+        assert!(content.contains("exec ship\n"));
+        assert!(!content.contains("--skip"));
+        assert!(!content.contains("--only"));
+
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn init_rejects_unknown_check_name() {
+        let temp_dir =
+            std::env::temp_dir().join(format!("ship_test_init_bad_{}", std::process::id()));
+        let _ = fs::remove_dir_all(&temp_dir);
+        fs::create_dir_all(&temp_dir).expect("create temp dir");
+
+        let skip = vec!["nope".to_string()];
+        let options = InitOptions {
+            hook_dir: ".githooks",
+            force: false,
+            no_config: true,
+            skip: &skip,
+            only: &[],
+            all: false,
+        };
+
+        let res = run(&temp_dir, &options);
+        assert!(res.is_err());
+        assert!(!temp_dir.join(".githooks/pre-commit").exists());
 
         let _ = fs::remove_dir_all(&temp_dir);
     }

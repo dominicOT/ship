@@ -155,6 +155,16 @@ This:
 2. Configures git to use the shared hooks directory: `git config core.hooksPath .githooks`.
 3. Creates a `.ship.toml` configuration file (if not already present).
 
+By default the hook skips `tests` (usually too slow for a pre-commit hook) and runs everything else. Pick your own checklist for the hook:
+
+```bash
+ship init --skip tests,logs      # skip the tests and console.log checks
+ship init --only secrets,todos   # only run these checks, ignore the rest
+ship init --all                  # run every check, including tests
+```
+
+Re-run `ship init` any time to change the selection later — it overwrites the existing hook.
+
 Commit the hooks so your entire team gets them:
 ```bash
 git add .githooks .ship.toml

@@ -70,6 +70,18 @@ enum Commands {
         /// Do not create .ship.toml config file
         #[arg(long)]
         no_config: bool,
+
+        /// Checks the pre-commit hook should skip (comma-separated). Defaults to "tests".
+        #[arg(long, value_delimiter = ',')]
+        skip: Vec<String>,
+
+        /// Checks the pre-commit hook should exclusively run (comma-separated)
+        #[arg(long, value_delimiter = ',')]
+        only: Vec<String>,
+
+        /// Run every check in the pre-commit hook (overrides the default tests skip)
+        #[arg(long)]
+        all: bool,
     },
 
     /// Update ship to the latest GitHub release
@@ -115,6 +127,9 @@ fn run() -> Result<bool> {
         ref hook_dir,
         force,
         no_config,
+        ref skip,
+        ref only,
+        all,
     }) = cli.command
     {
         init::run(
@@ -123,6 +138,9 @@ fn run() -> Result<bool> {
                 hook_dir,
                 force,
                 no_config,
+                skip,
+                only,
+                all,
             },
         )?;
         return Ok(true);
@@ -156,25 +174,14 @@ fn run() -> Result<bool> {
 
     let mut results: Vec<CheckResult> = Vec::new();
 
-    let all_checks = [
-        "tests",
-        "secrets",
-        "todos",
-        "logs",
-        "flags",
-        "version",
-        "migrations",
-        "changelog",
-    ];
-
     let to_run: Vec<&str> = if !effective_only.is_empty() {
-        all_checks
+        checks::ALL_CHECKS
             .iter()
             .filter(|c| effective_only.iter().any(|o| o.eq_ignore_ascii_case(c)))
             .copied()
             .collect()
     } else {
-        all_checks
+        checks::ALL_CHECKS
             .iter()
             .filter(|c| !effective_skip.iter().any(|s| s.eq_ignore_ascii_case(c)))
             .copied()

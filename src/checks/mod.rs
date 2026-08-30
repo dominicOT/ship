@@ -9,6 +9,17 @@ pub mod version;
 
 use serde::Serialize;
 
+pub const ALL_CHECKS: &[&str] = &[
+    "tests",
+    "secrets",
+    "todos",
+    "logs",
+    "flags",
+    "version",
+    "migrations",
+    "changelog",
+];
+
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum CheckStatus {
