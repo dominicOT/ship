@@ -19,6 +19,7 @@ use project::Project;
 #[derive(Parser, Debug)]
 #[command(
     name = "ship",
+    version,
     about = "One command pre-deploy checklist",
     long_about = "Run essential checks before deploying:\n  ✓ tests\n  ✓ secrets\n  ✓ TODOs\n  ✓ console.logs\n  ✓ feature flags\n  ✓ version\n  ✓ migrations\n  ✓ changelog"
 )]

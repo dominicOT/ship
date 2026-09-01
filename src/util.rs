@@ -1,6 +1,6 @@
+use ignore::{DirEntry, WalkBuilder};
 use std::env;
 use std::path::Path;
-use walkdir::{DirEntry, WalkDir};
 
 pub fn command_exists(cmd: &str) -> bool {
     if let Ok(path_var) = env::var("PATH") {
@@ -35,8 +35,14 @@ pub fn walk_source_files(root: &Path) -> impl Iterator<Item = DirEntry> {
         "__generated__",
     ];
 
-    WalkDir::new(root)
-        .into_iter()
+    let mut builder = WalkBuilder::new(root);
+    builder
+        .hidden(false)
+        .git_ignore(true)
+        .git_global(true)
+        .git_exclude(true)
+        .require_git(false)
+        .ignore(true)
         .filter_entry(move |e| {
             let name = e.file_name().to_string_lossy();
 
@@ -45,14 +51,17 @@ pub fn walk_source_files(root: &Path) -> impl Iterator<Item = DirEntry> {
                 return false;
             }
 
-            if e.file_type().is_dir() {
+            if e.file_type().is_some_and(|t| t.is_dir()) {
                 !skip_dirs.iter().any(|d| name == *d) && !name.starts_with('.')
             } else {
                 true
             }
-        })
+        });
+
+    builder
+        .build()
         .filter_map(|e| e.ok())
-        .filter(|e| e.file_type().is_file())
+        .filter(|e| e.file_type().is_some_and(|t| t.is_file()))
 }
 
 #[cfg(test)]
@@ -81,6 +90,30 @@ mod tests {
         assert!(!files
             .iter()
             .any(|p| p.ends_with("src/generated/prisma/client.ts")));
+
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn walk_source_files_respects_gitignore_and_ignore_files() {
+        let temp_dir =
+            env::temp_dir().join(format!("ship_test_walk_ignore_{}", std::process::id()));
+        let _ = fs::remove_dir_all(&temp_dir);
+        fs::create_dir_all(&temp_dir).expect("create dir");
+
+        fs::write(temp_dir.join("main.rs"), "fn main() {}").expect("write file");
+        fs::write(temp_dir.join(".env"), "SECRET=abc").expect("write .env");
+        fs::write(temp_dir.join("scratch.log"), "debug output").expect("write scratch.log");
+        fs::write(temp_dir.join(".gitignore"), ".env\n").expect("write .gitignore");
+        fs::write(temp_dir.join(".ignore"), "scratch.log\n").expect("write .ignore");
+
+        let files: Vec<_> = walk_source_files(&temp_dir)
+            .map(|e| e.path().to_path_buf())
+            .collect();
+
+        assert!(files.iter().any(|p| p.ends_with("main.rs")));
+        assert!(!files.iter().any(|p| p.ends_with(".env")));
+        assert!(!files.iter().any(|p| p.ends_with("scratch.log")));
 
         let _ = fs::remove_dir_all(&temp_dir);
     }
