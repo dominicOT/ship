@@ -147,6 +147,8 @@ fn run() -> Result<bool> {
         return Ok(true);
     }
 
+    let update_notice_rx = update::spawn_notice_check();
+
     println!("{}", "ship".bold().cyan());
     println!();
     println!("{}", "Checks".bold());
@@ -230,16 +232,20 @@ fn run() -> Result<bool> {
         .iter()
         .any(|r| matches!(r.status, CheckStatus::Fail));
 
-    if critical_failed && !cli.dry_run {
+    let success = if critical_failed && !cli.dry_run {
         println!("{}", "✗ Not ready to ship".red().bold());
-        Ok(false)
+        false
     } else if any_failed {
         println!("{}", "⚠ Ready with warnings".yellow().bold());
-        Ok(true)
+        true
     } else {
         println!("{}", "✓ Ready to ship".green().bold());
-        Ok(true)
-    }
+        true
+    };
+
+    update::print_notice_if_available(update_notice_rx);
+
+    Ok(success)
 }
 
 fn print_result(result: &CheckResult) {
