@@ -31,6 +31,8 @@ pub fn walk_source_files(root: &Path) -> impl Iterator<Item = DirEntry> {
         "Pods",
         ".idea",
         ".vscode",
+        "generated",
+        "__generated__",
     ];
 
     WalkDir::new(root)
@@ -51,4 +53,35 @@ pub fn walk_source_files(root: &Path) -> impl Iterator<Item = DirEntry> {
         })
         .filter_map(|e| e.ok())
         .filter(|e| e.file_type().is_file())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+
+    #[test]
+    fn walk_source_files_skips_generated_dirs() {
+        let temp_dir =
+            env::temp_dir().join(format!("ship_test_walk_generated_{}", std::process::id()));
+        let _ = fs::remove_dir_all(&temp_dir);
+        fs::create_dir_all(temp_dir.join("src/generated/prisma")).expect("create dirs");
+        fs::write(temp_dir.join("src/main.rs"), "fn main() {}").expect("write file");
+        fs::write(
+            temp_dir.join("src/generated/prisma/client.ts"),
+            "AKIAABCDEFGHIJKLMNOP",
+        )
+        .expect("write generated file");
+
+        let files: Vec<_> = walk_source_files(&temp_dir)
+            .map(|e| e.path().to_path_buf())
+            .collect();
+
+        assert!(files.iter().any(|p| p.ends_with("src/main.rs")));
+        assert!(!files
+            .iter()
+            .any(|p| p.ends_with("src/generated/prisma/client.ts")));
+
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
 }
