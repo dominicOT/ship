@@ -1,14 +1,30 @@
 use anyhow::{anyhow, bail, Context, Result};
 use colored::*;
+use serde::{Deserialize, Serialize};
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::sync::mpsc::{self, Receiver};
+use std::thread;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use crate::util::command_exists;
 
 const REPO: &str = "dominicOT/ship";
-const CURRENT_VERSION: &str = env!("CARGO_PKG_VERSION");
+pub const CURRENT_VERSION: &str = env!("CARGO_PKG_VERSION");
+
+/// How long a cached "latest version" lookup stays valid before we hit
+/// GitHub again.
+const NOTICE_CHECK_INTERVAL: Duration = Duration::from_secs(24 * 60 * 60);
+/// Upper bound on how long the background notice check may take to
+/// resolve the latest tag over the network.
+const NOTICE_CHECK_TIMEOUT_SECS: u64 = 2;
+/// Upper bound on how long the main command waits for the background
+/// check to finish before giving up on showing a notice this run. This
+/// only ever applies once per [`NOTICE_CHECK_INTERVAL`] — a cache hit
+/// resolves near-instantly and this timeout is never touched.
+const NOTICE_JOIN_TIMEOUT: Duration = Duration::from_millis(800);
 
 pub struct UpdateOptions {
     /// Only check for an update, don't install it
@@ -101,10 +117,26 @@ pub fn run(options: &UpdateOptions) -> Result<()> {
 /// GitHub "latest release" redirect, mirroring scripts/install.sh's
 /// approach of avoiding the rate-limited GitHub API.
 fn resolve_latest_tag() -> Result<String> {
+    resolve_latest_tag_with_timeout(None)
+}
+
+fn resolve_latest_tag_with_timeout(timeout_secs: Option<u64>) -> Result<String> {
     let url = format!("https://github.com/{REPO}/releases/latest");
 
+    let mut args = vec!["-fsSL".to_string()];
+    if let Some(secs) = timeout_secs {
+        args.push("--max-time".to_string());
+        args.push(secs.to_string());
+    }
+    args.extend(
+        ["-o", "/dev/null", "-w", "%{url_effective}"]
+            .iter()
+            .map(|s| s.to_string()),
+    );
+    args.push(url);
+
     let output = Command::new("curl")
-        .args(["-fsSL", "-o", "/dev/null", "-w", "%{url_effective}", &url])
+        .args(&args)
         .output()
         .context("Failed to run curl")?;
 
@@ -122,6 +154,116 @@ fn resolve_latest_tag() -> Result<String> {
         .filter(|tag| !tag.is_empty() && tag.starts_with('v'))
         .map(|tag| tag.to_string())
         .ok_or_else(|| anyhow!("Could not determine latest release tag from {final_url}"))
+}
+
+/// Cached result of the latest-version lookup used for the passive
+/// "a newer version is available" notice, so a normal `ship` run only
+/// hits the network once per [`NOTICE_CHECK_INTERVAL`].
+#[derive(Serialize, Deserialize)]
+struct NoticeCache {
+    checked_at_secs: u64,
+    latest_version: String,
+}
+
+fn notice_cache_path() -> PathBuf {
+    env::temp_dir().join("ship-update-check.json")
+}
+
+fn now_secs() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0)
+}
+
+fn read_cached_latest_version() -> Option<String> {
+    let content = fs::read_to_string(notice_cache_path()).ok()?;
+    let cache: NoticeCache = serde_json::from_str(&content).ok()?;
+    let age = now_secs().saturating_sub(cache.checked_at_secs);
+    if Duration::from_secs(age) < NOTICE_CHECK_INTERVAL {
+        Some(cache.latest_version)
+    } else {
+        None
+    }
+}
+
+fn write_cached_latest_version(latest_version: &str) {
+    let cache = NoticeCache {
+        checked_at_secs: now_secs(),
+        latest_version: latest_version.to_string(),
+    };
+    if let Ok(json) = serde_json::to_string(&cache) {
+        let _ = fs::write(notice_cache_path(), json);
+    }
+}
+
+/// Best-effort lookup of the latest released version, using (and
+/// refreshing) the on-disk cache. Returns `None` on any failure —
+/// offline, no `curl`, rate limited, etc. — since this must never
+/// block or fail a `ship` run.
+fn latest_version_for_notice() -> Option<String> {
+    if let Some(cached) = read_cached_latest_version() {
+        return Some(cached);
+    }
+
+    if !command_exists("curl") {
+        return None;
+    }
+
+    let tag = resolve_latest_tag_with_timeout(Some(NOTICE_CHECK_TIMEOUT_SECS)).ok()?;
+    let version = tag.trim_start_matches('v').to_string();
+    write_cached_latest_version(&version);
+    Some(version)
+}
+
+/// Parse a dotted numeric version like "1.4.0" into comparable parts.
+/// Non-numeric or missing components sort as 0, so this degrades
+/// gracefully on unexpected version strings instead of erroring.
+fn version_parts(version: &str) -> Vec<u64> {
+    version
+        .split('.')
+        .map(|part| part.parse::<u64>().unwrap_or(0))
+        .collect()
+}
+
+fn is_newer(candidate: &str, current: &str) -> bool {
+    version_parts(candidate) > version_parts(current)
+}
+
+/// Kick off a background check for a newer release. Call this early in
+/// a `ship` run and pair it with [`print_notice_if_available`] near the
+/// end, so the network round trip overlaps with the local checks
+/// instead of adding latency on its own.
+pub fn spawn_notice_check() -> Receiver<Option<String>> {
+    let (tx, rx) = mpsc::channel();
+    thread::spawn(move || {
+        let _ = tx.send(latest_version_for_notice());
+    });
+    rx
+}
+
+/// If the background check (started via [`spawn_notice_check`]) found a
+/// newer release before `NOTICE_JOIN_TIMEOUT` elapses, print a notice
+/// about it. Silent on timeout, no update, or any other non-finding.
+pub fn print_notice_if_available(rx: Receiver<Option<String>>) {
+    let Ok(Some(latest_version)) = rx.recv_timeout(NOTICE_JOIN_TIMEOUT) else {
+        return;
+    };
+
+    if !is_newer(&latest_version, CURRENT_VERSION) {
+        return;
+    }
+
+    println!();
+    println!(
+        "{} A newer version of ship is available: {}",
+        "→".cyan(),
+        format!("v{latest_version}").bold()
+    );
+    println!("  You are currently running v{CURRENT_VERSION}.");
+    println!();
+    println!("  Update with:");
+    println!("    {}", "ship update".bold());
 }
 
 fn target_os_arch() -> Result<(&'static str, &'static str)> {
@@ -277,4 +419,25 @@ fn install_binary(new_binary: &Path) -> Result<()> {
     );
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn is_newer_detects_newer_and_older_versions() {
+        assert!(is_newer("1.4.0", "1.2.3"));
+        assert!(is_newer("0.3.10", "0.3.9"));
+        assert!(!is_newer("1.2.3", "1.2.3"));
+        assert!(!is_newer("1.2.0", "1.2.3"));
+        assert!(!is_newer("0.3.1", "0.3.4"));
+    }
+
+    #[test]
+    fn version_parts_treats_missing_and_non_numeric_as_zero() {
+        assert_eq!(version_parts("1.4.0"), vec![1, 4, 0]);
+        assert_eq!(version_parts("1.4"), vec![1, 4]);
+        assert_eq!(version_parts("1.4.0-rc1"), vec![1, 4, 0]);
+    }
 }
