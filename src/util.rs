@@ -14,6 +14,27 @@ pub fn command_exists(cmd: &str) -> bool {
     false
 }
 
+/// Parse the numeric release core of a version string (e.g. "4.17.21",
+/// or "1.0.0" out of "1.0.0-beta.3"), ignoring any pre-release/build
+/// metadata after the first `-` or `+`. Good enough for comparing
+/// concrete, resolved lockfile versions against an advisory's fixed
+/// version — not a full semver implementation.
+pub fn version_core_parts(version: &str) -> Vec<u64> {
+    let core = version
+        .split(['-', '+'])
+        .next()
+        .unwrap_or(version);
+    core.split('.')
+        .map(|part| part.parse::<u64>().unwrap_or(0))
+        .collect()
+}
+
+/// True if `version` is strictly less than `other`, comparing release
+/// cores only (see [`version_core_parts`]).
+pub fn version_lt(version: &str, other: &str) -> bool {
+    version_core_parts(version) < version_core_parts(other)
+}
+
 pub fn walk_source_files(root: &Path) -> impl Iterator<Item = DirEntry> {
     let skip_dirs = [
         "node_modules",
@@ -47,7 +68,11 @@ pub fn walk_source_files(root: &Path) -> impl Iterator<Item = DirEntry> {
             let name = e.file_name().to_string_lossy();
 
             // Exclude generated report files
-            if name == "ship-report.md" || name == "ship-report.json" {
+            if name == "ship-report.md"
+                || name == "ship-report.json"
+                || name == "ship-security-report.md"
+                || name == "ship-security-report.json"
+            {
                 return false;
             }
 
@@ -116,5 +141,13 @@ mod tests {
         assert!(!files.iter().any(|p| p.ends_with("scratch.log")));
 
         let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn version_lt_compares_release_cores() {
+        assert!(version_lt("4.17.15", "4.17.21"));
+        assert!(!version_lt("4.17.21", "4.17.21"));
+        assert!(!version_lt("4.18.0", "4.17.21"));
+        assert!(version_lt("1.0.0-beta.3", "1.0.1"));
     }
 }
