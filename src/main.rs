@@ -10,6 +10,7 @@ mod config;
 mod export;
 mod init;
 mod project;
+mod security;
 mod update;
 mod util;
 
@@ -21,7 +22,7 @@ use project::Project;
     name = "ship",
     version,
     about = "One command pre-deploy checklist",
-    long_about = "Run essential checks before deploying:\n  ✓ tests\n  ✓ secrets\n  ✓ TODOs\n  ✓ console.logs\n  ✓ feature flags\n  ✓ version\n  ✓ migrations\n  ✓ changelog"
+    long_about = "Run essential checks before deploying:\n  ✓ tests\n  ✓ secrets\n  ✓ TODOs\n  ✓ console.logs\n  ✓ feature flags\n  ✓ version\n  ✓ migrations\n  ✓ changelog\n\nFor deeper (slower) security scanning, run: ship security"
 )]
 struct Cli {
     #[command(subcommand)]
@@ -95,6 +96,33 @@ enum Commands {
         #[arg(long, short = 'f')]
         force: bool,
     },
+
+    /// Deeper (slower) security scan: secrets, tracked .env files, and more
+    Security {
+        /// Run checks without failing (report only)
+        #[arg(long, short = 'n')]
+        dry_run: bool,
+
+        /// Skip specific checks (comma-separated: secrets,env-files,deps,auth)
+        #[arg(long, value_delimiter = ',')]
+        skip: Vec<String>,
+
+        /// Only run these checks (comma-separated)
+        #[arg(long, value_delimiter = ',')]
+        only: Vec<String>,
+
+        /// Verbose output
+        #[arg(long, short)]
+        verbose: bool,
+
+        /// Export report as JSON to optional path (defaults to `ship-security-report.json` when flag provided without a path)
+        #[arg(long, value_name = "FILE", num_args = 0..=1, default_missing_value = "ship-security-report.json")]
+        json: Option<PathBuf>,
+
+        /// Export report as Markdown to optional path (defaults to `ship-security-report.md` when flag provided without a path)
+        #[arg(long, value_name = "FILE", num_args = 0..=1, default_missing_value = "ship-security-report.md")]
+        md: Option<PathBuf>,
+    },
 }
 
 fn main() -> ExitCode {
@@ -145,6 +173,18 @@ fn run() -> Result<bool> {
             },
         )?;
         return Ok(true);
+    }
+
+    if let Some(Commands::Security {
+        dry_run,
+        ref skip,
+        ref only,
+        verbose,
+        ref json,
+        ref md,
+    }) = cli.command
+    {
+        return run_security(&project, dry_run, skip, only, verbose, json.as_deref(), md.as_deref());
     }
 
     let update_notice_rx = update::spawn_notice_check();
@@ -240,6 +280,101 @@ fn run() -> Result<bool> {
         true
     } else {
         println!("{}", "✓ Ready to ship".green().bold());
+        true
+    };
+
+    update::print_notice_if_available(update_notice_rx);
+
+    Ok(success)
+}
+
+fn run_security(
+    project: &Project,
+    dry_run: bool,
+    skip: &[String],
+    only: &[String],
+    verbose: bool,
+    json: Option<&std::path::Path>,
+    md: Option<&std::path::Path>,
+) -> Result<bool> {
+    let update_notice_rx = update::spawn_notice_check();
+
+    println!("{}", "ship security".bold().cyan());
+    println!(
+        "{}",
+        "Deeper, slower checks — secrets patterns, tracked .env files, and more".dimmed()
+    );
+    println!();
+    println!("{}", "Checks".bold());
+
+    if verbose {
+        println!("  Project type: {}", project.kind);
+        if let Some(ref root) = project.root {
+            println!("  Root: {}", root.display());
+        }
+        println!();
+    }
+
+    let to_run: Vec<&str> = if !only.is_empty() {
+        security::ALL_CHECKS
+            .iter()
+            .filter(|c| only.iter().any(|o| o.eq_ignore_ascii_case(c)))
+            .copied()
+            .collect()
+    } else {
+        security::ALL_CHECKS
+            .iter()
+            .filter(|c| !skip.iter().any(|s| s.eq_ignore_ascii_case(c)))
+            .copied()
+            .collect()
+    };
+
+    let mut results: Vec<CheckResult> = Vec::new();
+
+    for name in to_run {
+        let result = match name {
+            "secrets" => security::secrets::run(project, verbose),
+            "env-files" => security::env_files::run(project, verbose),
+            "deps" => security::deps::run(project, verbose),
+            "auth" => security::auth::run(project, verbose),
+            _ => unreachable!(),
+        };
+
+        print_result(&result);
+        results.push(result);
+    }
+
+    println!();
+
+    if json.is_some() || md.is_some() {
+        if let Some(path) = json {
+            export::write_json(path, project, &results).context("Failed to write JSON report")?;
+            println!("Wrote JSON report to {}", path.display());
+        }
+
+        if let Some(path) = md {
+            export::write_markdown(path, project, &results)
+                .context("Failed to write Markdown report")?;
+            println!("Wrote Markdown report to {}", path.display());
+        }
+    }
+
+    let critical_failed = results
+        .iter()
+        .any(|r| matches!(r.status, CheckStatus::Fail) && r.critical);
+
+    let any_failed = results
+        .iter()
+        .any(|r| matches!(r.status, CheckStatus::Fail));
+
+    let success = if critical_failed && !dry_run {
+        println!("{}", "✗ Security issues found".red().bold());
+        false
+    } else if any_failed {
+        println!("{}", "⚠ Passed with warnings".yellow().bold());
+        true
+    } else {
+        println!("{}", "✓ No security issues found".green().bold());
         true
     };
 
