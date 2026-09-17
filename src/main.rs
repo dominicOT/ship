@@ -11,8 +11,10 @@ mod export;
 mod init;
 mod project;
 mod security;
+mod spinner;
 mod update;
 mod util;
+mod welcome;
 
 use checks::{CheckResult, CheckStatus};
 use project::Project;
@@ -144,6 +146,8 @@ fn main() -> ExitCode {
 fn run() -> Result<bool> {
     let cli = Cli::parse();
 
+    welcome::maybe_show();
+
     if let Some(Commands::Update { check, force }) = cli.command {
         update::run(&update::UpdateOptions { check, force })?;
         return Ok(true);
@@ -232,7 +236,7 @@ fn run() -> Result<bool> {
     };
 
     for name in to_run {
-        let result = match name {
+        let result = spinner::run(name, || match name {
             "tests" => checks::tests::run(&project, cli.verbose),
             "secrets" => checks::secrets::run(&project, cli.verbose),
             "todos" => checks::todos::run(&project, cli.verbose),
@@ -242,7 +246,7 @@ fn run() -> Result<bool> {
             "migrations" => checks::migrations::run(&project, cli.verbose),
             "changelog" => checks::changelog::run(&project, cli.verbose),
             _ => unreachable!(),
-        };
+        });
 
         print_result(&result);
         results.push(result);
@@ -332,13 +336,13 @@ fn run_security(
     let mut results: Vec<CheckResult> = Vec::new();
 
     for name in to_run {
-        let result = match name {
+        let result = spinner::run(name, || match name {
             "secrets" => security::secrets::run(project, verbose),
             "env-files" => security::env_files::run(project, verbose),
             "deps" => security::deps::run(project, verbose),
             "auth" => security::auth::run(project, verbose),
             _ => unreachable!(),
-        };
+        });
 
         print_result(&result);
         results.push(result);

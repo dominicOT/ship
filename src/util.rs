@@ -1,6 +1,21 @@
 use ignore::{DirEntry, WalkBuilder};
 use std::env;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+
+/// The current user's home directory, for state that should persist
+/// across reboots (unlike `env::temp_dir()`, which is fine for
+/// short-lived caches but not for a one-time "have we shown this
+/// before" marker).
+pub fn home_dir() -> Option<PathBuf> {
+    #[cfg(windows)]
+    {
+        env::var_os("USERPROFILE").map(PathBuf::from)
+    }
+    #[cfg(not(windows))]
+    {
+        env::var_os("HOME").map(PathBuf::from)
+    }
+}
 
 pub fn command_exists(cmd: &str) -> bool {
     if let Ok(path_var) = env::var("PATH") {
