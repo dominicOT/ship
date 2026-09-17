@@ -103,7 +103,7 @@ enum Commands {
         #[arg(long, short = 'n')]
         dry_run: bool,
 
-        /// Skip specific checks (comma-separated: secrets,env-files,deps)
+        /// Skip specific checks (comma-separated: secrets,env-files,deps,auth)
         #[arg(long, value_delimiter = ',')]
         skip: Vec<String>,
 
@@ -336,6 +336,7 @@ fn run_security(
             "secrets" => security::secrets::run(project, verbose),
             "env-files" => security::env_files::run(project, verbose),
             "deps" => security::deps::run(project, verbose),
+            "auth" => security::auth::run(project, verbose),
             _ => unreachable!(),
         };
 
