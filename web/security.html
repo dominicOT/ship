@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Security Scanning — SHIP Mission Manual</title>
+  <meta name="description" content="Deeper security scanning with 'ship security': extended secrets, tracked .env files, dependency CVE alerts & version ranges, and framework-aware auth smells.">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <main class="manual-wrapper">
+    
+    <!-- Top Bar -->
+    <header class="top-bar">
+      <div class="top-bar-left">
+        <span class="classification-stamp">
+          <span>★</span>
+          <span>Security Protocol // Level-2 Audit</span>
+        </span>
+        <span class="version-stamp">RELEASE // v0.3.7</span>
+      </div>
+      <div class="top-bar-right">
+        <a href="https://github.com/dominicOT/ship" target="_blank" rel="noopener noreferrer" class="github-pill" title="View ship on GitHub">
+          <svg class="gh-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+          </svg>
+          <span>GitHub</span>
+          <span>↗</span>
+        </a>
+        <div class="meta-spec">
+          <div>DOC-ID: SPEC-SHIP-SEC</div>
+          <div>MODULE: SHIP SECURITY</div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Navigation Menu -->
+    <nav class="nav-bar">
+      <a href="index.html" class="nav-link">Overview</a>
+      <a href="security.html" class="nav-link active">Security <span class="nav-badge">v0.3.5+</span></a>
+      <a href="hooks.html" class="nav-link">Git Hooks & Config</a>
+      <a href="install.html" class="nav-link">Installation & Update</a>
+    </nav>
+
+    <!-- Subpage Header -->
+    <div class="subpage-header">
+      <span class="subpage-badge">Subcommand: ship security</span>
+      <h1 class="subpage-title">Deep Security Audit</h1>
+      <p class="subpage-desc">
+        While the core <code>ship</code> runner is optimized for sub-second pre-commit checks, <code>ship security</code> performs a comprehensive, multi-layered inspection across extended credentials, git-tracked secrets, dependency vulnerabilities, and framework authorization antipatterns.
+      </p>
+    </div>
+
+    <!-- Interactive Execution Telemetry -->
+    <div class="section-header">
+      <div class="section-title">01. Security Telemetry Simulator</div>
+      <div class="section-subtitle">Simulate Deep Scanning Outcomes</div>
+    </div>
+
+    <div class="terminal-wrapper">
+      <div class="terminal-controls-bar">
+        <div class="telemetry-tabs">
+          <button class="sim-tab-btn active" onclick="switchSecSim('clean', this)">All Clear</button>
+          <button class="sim-tab-btn" onclick="switchSecSim('env', this)">Tracked .env Violation</button>
+          <button class="sim-tab-btn" onclick="switchSecSim('deps', this)">Unbounded / Vulnerable Deps</button>
+          <button class="sim-tab-btn" onclick="switchSecSim('auth', this)">Auth / JWT Smells</button>
+          <button class="sim-tab-btn" onclick="switchSecSim('verbose', this)">Verbose Output (-v)</button>
+        </div>
+        <div class="telemetry-status-light">
+          <span class="status-dot"></span>
+          <span>SCANNER READY</span>
+        </div>
+      </div>
+
+      <div class="terminal-box" id="sec-terminal-screen">
+        <div class="terminal-header">
+          <span>MISSION CONTROL // DEEP SECURITY AUDIT v0.3.7</span>
+          <span>PID: 8840</span>
+        </div>
+        <div><span class="prompt">$</span> ship security</div>
+        <br>
+        <div class="text-cyan">ship security</div>
+        <br>
+        <div class="text-bold">Checks</div>
+        <div>  <span class="check-pass">✓</span> <span class="check-pass">secrets</span>    <span class="text-dim">none found (extended pattern set)</span></div>
+        <div>  <span class="check-pass">✓</span> <span class="check-pass">env-files</span>  <span class="text-dim">no committed .env files detected</span></div>
+        <div>  <span class="check-pass">✓</span> <span class="check-pass">deps</span>       <span class="text-dim">Cargo.lock verified (0 advisories)</span></div>
+        <div>  <span class="check-pass">✓</span> <span class="check-pass">auth</span>       <span class="text-dim">no JWT/auth smells detected</span></div>
+        <br>
+        <div class="check-pass">✓ Security scan passed</div>
+      </div>
+    </div>
+
+    <!-- Security Checkpoints Matrix -->
+    <div class="section-header">
+      <div class="section-title">02. Inspection Domains</div>
+      <div class="section-subtitle">Deep Scan Module Breakdown</div>
+    </div>
+
+    <div class="table-container">
+      <table class="spec-table">
+        <thead>
+          <tr>
+            <th>Check</th>
+            <th>Target Scope</th>
+            <th>Heuristics & Flagged Conditions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>secrets</strong></td>
+            <td><span class="badge-security">EXTENDED</span></td>
+            <td>
+              Expanded pattern library beyond the fast scan. Detects JWT tokens & signing secrets, private keys (RSA/EC/OpenSSH/DSA/PGP), GCP service account keys, cloud provider tokens (AWS, Azure, DigitalOcean, Docker Hub, npm, PyPI), and vendor API keys (GitHub, OpenAI, Anthropic, Stripe, Slack, Twilio, SendGrid, Mailgun). Also scans infrastructure and CI files that the fast check skips: Terraform (<code>.tf</code>, <code>.tfvars</code>), Dockerfiles, <code>docker-compose.yml</code>, and Jenkinsfiles.
+            </td>
+          </tr>
+          <tr>
+            <td><strong>env-files</strong></td>
+            <td><span class="badge-critical">CRITICAL</span></td>
+            <td>
+              Scans git index for any committed <code>.env</code> or <code>.env.*</code> files. Automatically distinguishes harmless template files such as <code>.env.example</code>, <code>.env.sample</code>, and <code>.env.template</code> to avoid false positives.
+            </td>
+          </tr>
+          <tr>
+            <td><strong>deps</strong></td>
+            <td><span class="badge-normal">ADVISORY</span></td>
+            <td>
+              Parses <code>Cargo.lock</code>, <code>package-lock.json</code>, <code>poetry.lock</code>, <code>go.sum</code>, and <code>requirements.txt</code>. Flags:
+              <ul style="margin-left: 1.25rem; margin-top: 0.35rem;">
+                <li>Resolved versions matching curated high-severity security advisories (e.g. log4j, minimist, lodash prototype pollution).</li>
+                <li>Missing lockfiles in production application targets (context-aware: skipped for Rust library crates where unpinned <code>Cargo.lock</code> is standard).</li>
+                <li>Wildcard <code>*</code> or unbounded ranges (<code>&gt;=x</code> without upper ceiling) on security-critical dependencies (auth, cryptography, web frameworks).</li>
+                <li>Unpinned floating dependencies in <code>requirements.txt</code>.</li>
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>auth</strong></td>
+            <td><span class="badge-normal">CODE HEURISTIC</span></td>
+            <td>
+              Framework-aware authorization and JWT vulnerability smell detection for JavaScript/TypeScript and Python:
+              <ul style="margin-left: 1.25rem; margin-top: 0.35rem;">
+                <li>Usage of insecure JWT <code>"none"</code> algorithm.</li>
+                <li>Hardcoded signing secrets passed as literal strings directly to <code>jwt.sign</code>, <code>verify</code>, or <code>encode</code>.</li>
+                <li><code>jwt.verify</code> or <code>decode</code> calls without an explicit <code>algorithms</code> allowlist (mitigates algorithm confusion CVEs).</li>
+                <li>Express.js routes on sensitive paths (<code>/admin</code>, <code>/account</code>, <code>/payment</code>, etc.) lacking intervening authorization middleware.</li>
+                <li>Flask routes on sensitive paths missing <code>@login_required</code> or <code>@jwt_required</code> decorators.</li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- CLI Options & Export -->
+    <div class="section-header">
+      <div class="section-title">03. CLI Usage & Dedicated Reports</div>
+      <div class="section-subtitle">Audit Execution Flags</div>
+    </div>
+
+    <section class="manual-card">
+      <h3>Run Commands</h3>
+      <p style="font-size: 0.92rem; margin-bottom: 1rem; color: var(--ink);">
+        <code>ship security</code> supports the same composable flags as the primary runner, including non-zero dry runs, check filtering, and dedicated security audit exports:
+      </p>
+
+      <div class="code-container" style="margin-bottom: 1.5rem;">
+        <pre class="code-snippet" id="sec-cli-cmd">ship security                          # execute full deep scan
+ship security -p /path/to/project      # run on external project directory
+ship security -v                       # verbose mode: print line numbers & snippets
+ship security -n                       # dry-run mode: report only without failing process
+ship security --skip env-files,deps    # skip specific security modules
+ship security --only secrets           # isolate a specific check
+ship security --json                   # writes ship-security-report.json
+ship security --md                     # writes ship-security-report.md</pre>
+        <button class="copy-btn" onclick="copySnippet('sec-cli-cmd', this)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          <span class="copy-text">COPY</span>
+        </button>
+      </div>
+
+      <h3>Security Export Sample</h3>
+      <div class="export-tabs-nav">
+        <button class="export-tab-btn active" onclick="switchSecReportTab('json', this)">ship-security-report.json</button>
+        <button class="export-tab-btn" onclick="switchSecReportTab('md', this)">ship-security-report.md</button>
+      </div>
+
+      <pre class="export-preview-content" id="sec-report-preview">{
+  "project": {
+    "kind": "Node",
+    "root": "/workspace/payment-service"
+  },
+  "results": [
+    { "name": "secrets", "status": "pass", "critical": true, "detail": "none found (extended patterns)" },
+    { "name": "env-files", "status": "pass", "critical": true, "detail": "no committed .env files" },
+    { "name": "deps", "status": "warn", "critical": false, "detail": "1 unbounded dependency range found in package.json (jsonwebtoken: >=8.0.0)" },
+    { "name": "auth", "status": "pass", "critical": false, "detail": "no auth smells detected" }
+  ]
+}</pre>
+    </section>
+
+    <!-- Footer -->
+    <footer class="manual-footer">
+      <div class="footer-stamp">DORB-AI MICRO-TOOLS PROGRAM // LAUNCH OPS</div>
+      <div class="footer-links">
+        <a href="index.html" class="footer-link">← Overview</a>
+        <span class="footer-divider">//</span>
+        <a href="hooks.html" class="footer-link">Git Hooks & Config →</a>
+        <span class="footer-divider">//</span>
+        <a href="https://github.com/dominicOT/ship" target="_blank" rel="noopener noreferrer" class="footer-link">
+          <span>GitHub</span>
+          <span>↗</span>
+        </a>
+      </div>
+    </footer>
+
+  </main>
+
+  <script>
+    const secSimScenarios = {
+      clean: `
+<div class="terminal-header">
+  <span>MISSION CONTROL // DEEP SECURITY AUDIT v0.3.7</span>
+  <span>PID: 8840</span>
+</div>
+<div><span class="prompt">$</span> ship security</div>
+<br>
+<div class="text-cyan">ship security</div>
+<br>
+<div class="text-bold">Checks</div>
+<div>  <span class="check-pass">✓</span> <span class="check-pass">secrets</span>    <span class="text-dim">none found (extended pattern set)</span></div>
+<div>  <span class="check-pass">✓</span> <span class="check-pass">env-files</span>  <span class="text-dim">no committed .env files detected</span></div>
+<div>  <span class="check-pass">✓</span> <span class="check-pass">deps</span>       <span class="text-dim">Cargo.lock verified (0 advisories)</span></div>
+<div>  <span class="check-pass">✓</span> <span class="check-pass">auth</span>       <span class="text-dim">no JWT/auth smells detected</span></div>
+<br>
+<div class="check-pass">✓ Security scan passed</div>
+`,
+      env: `
+<div class="terminal-header">
+  <span>MISSION CONTROL // CRITICAL SECURITY FAILURE v0.3.7</span>
+  <span>PID: 8842</span>
+</div>
+<div><span class="prompt">$</span> ship security</div>
+<br>
+<div class="text-cyan">ship security</div>
+<br>
+<div class="text-bold">Checks</div>
+<div>  <span class="check-pass">✓</span> <span class="check-pass">secrets</span>    <span class="text-dim">none found</span></div>
+<div>  <span class="check-fail">✗</span> <span class="check-fail">env-files</span>  <span class="text-dim">tracked .env file found in git repository!</span></div>
+<div class="text-dim">      git index: .env.production (contains sensitive environment credentials)</div>
+<div>  <span class="check-pass">✓</span> <span class="check-pass">deps</span>       <span class="text-dim">all locks intact</span></div>
+<div>  <span class="check-pass">✓</span> <span class="check-pass">auth</span>       <span class="text-dim">no smells detected</span></div>
+<br>
+<div class="check-fail">✗ Security scan failed</div>
+<div class="text-dim" style="font-size: 0.8rem; margin-top: 0.3rem;">[Tracked .env file detected in git index. Run 'git rm --cached .env.production']</div>
+`,
+      deps: `
+<div class="terminal-header">
+  <span>MISSION CONTROL // SECURITY ADVISORY NOTICE v0.3.7</span>
+  <span>PID: 8845</span>
+</div>
+<div><span class="prompt">$</span> ship security</div>
+<br>
+<div class="text-cyan">ship security</div>
+<br>
+<div class="text-bold">Checks</div>
+<div>  <span class="check-pass">✓</span> <span class="check-pass">secrets</span>    <span class="text-dim">none found</span></div>
+<div>  <span class="check-pass">✓</span> <span class="check-pass">env-files</span>  <span class="text-dim">clean</span></div>
+<div>  <span class="check-warn">!</span> <span class="check-warn">deps</span>       <span class="text-dim">2 warnings found</span></div>
+<div class="text-dim">      package.json: "jsonwebtoken": ">=8.0.0" (unbounded range on security library)</div>
+<div class="text-dim">      package-lock.json: minimist@0.0.8 matches CVE-2020-7598</div>
+<div>  <span class="check-pass">✓</span> <span class="check-pass">auth</span>       <span class="text-dim">no smells detected</span></div>
+<br>
+<div class="check-warn">⚠ Security scan passed with warnings</div>
+`,
+      auth: `
+<div class="terminal-header">
+  <span>MISSION CONTROL // CODE PATTERN WARNING v0.3.7</span>
+  <span>PID: 8849</span>
+</div>
+<div><span class="prompt">$</span> ship security</div>
+<br>
+<div class="text-cyan">ship security</div>
+<br>
+<div class="text-bold">Checks</div>
+<div>  <span class="check-pass">✓</span> <span class="check-pass">secrets</span>    <span class="text-dim">none found</span></div>
+<div>  <span class="check-pass">✓</span> <span class="check-pass">env-files</span>  <span class="text-dim">clean</span></div>
+<div>  <span class="check-pass">✓</span> <span class="check-pass">deps</span>       <span class="text-dim">lockfile verified</span></div>
+<div>  <span class="check-warn">!</span> <span class="check-warn">auth</span>       <span class="text-dim">1 potential authorization smell</span></div>
+<div class="text-dim">      server/routes/admin.js:14  router.post('/admin/reset-db', handler) — missing auth middleware</div>
+<br>
+<div class="check-warn">⚠ Security scan passed with warnings</div>
+`,
+      verbose: `
+<div class="terminal-header">
+  <span>MISSION CONTROL // VERBOSE SECURITY TELEMETRY v0.3.7</span>
+  <span>PID: 8852</span>
+</div>
+<div><span class="prompt">$</span> ship security -v</div>
+<br>
+<div class="text-cyan">ship security</div>
+<br>
+<div class="text-bold">Checks</div>
+<div class="text-dim">  Target directory: /home/engineer/dev/api-gateway</div>
+<div class="text-dim">  Scanned 84 source files + Terraform and Docker configurations</div>
+<br>
+<div>  <span class="check-pass">✓</span> <span class="check-pass">secrets</span>    <span class="text-dim">0 matches across 18 extended cloud & token signatures</span></div>
+<div>  <span class="check-pass">✓</span> <span class="check-pass">env-files</span>  <span class="text-dim">git ls-files returned 0 committed .env targets</span></div>
+<div>  <span class="check-pass">✓</span> <span class="check-pass">deps</span>       <span class="text-dim">package-lock.json evaluated against curated advisory seed</span></div>
+<div>  <span class="check-pass">✓</span> <span class="check-pass">auth</span>       <span class="text-dim">all Express / Flask routes match required protection filters</span></div>
+<br>
+<div class="check-pass">✓ Security scan passed</div>
+`
+    };
+
+    function switchSecSim(key, btn) {
+      document.querySelectorAll('.telemetry-tabs .sim-tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('sec-terminal-screen').innerHTML = secSimScenarios[key];
+    }
+
+    const secReportSnippets = {
+      json: `{
+  "project": {
+    "kind": "Node",
+    "root": "/workspace/payment-service"
+  },
+  "results": [
+    { "name": "secrets", "status": "pass", "critical": true, "detail": "none found (extended patterns)" },
+    { "name": "env-files", "status": "pass", "critical": true, "detail": "no committed .env files" },
+    { "name": "deps", "status": "warn", "critical": false, "detail": "1 unbounded dependency range found in package.json (jsonwebtoken: >=8.0.0)" },
+    { "name": "auth", "status": "pass", "critical": false, "detail": "no auth smells detected" }
+  ]
+}`,
+      md: `# ship security report
+
+**Project:** Node
+**Root:** /workspace/payment-service
+
+## Checks
+
+- **secrets** — pass (none found in extended set)
+- **env-files** — pass (no committed .env files)
+- **deps** — warn (1 unbounded dependency range found in package.json: jsonwebtoken >=8.0.0)
+- **auth** — pass (no auth smells detected)
+
+⚠ Security scan passed with warnings`
+    };
+
+    function switchSecReportTab(key, btn) {
+      document.querySelectorAll('.export-tabs-nav .export-tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('sec-report-preview').textContent = secReportSnippets[key];
+    }
+
+    function copySnippet(elementId, btn) {
+      const text = document.getElementById(elementId).textContent.trim();
+      navigator.clipboard.writeText(text).then(() => {
+        const textSpan = btn.querySelector('.copy-text');
+        const orig = textSpan.textContent;
+        btn.classList.add('copied');
+        textSpan.textContent = 'COPIED 0x00';
+        setTimeout(() => {
+          btn.classList.remove('copied');
+          textSpan.textContent = orig;
+        }, 2000);
+      });
+    }
+  </script>
+
+</body>
+</html>

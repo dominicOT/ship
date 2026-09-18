@@ -117,8 +117,10 @@ mod tests {
         fs::create_dir_all(temp_dir.join("src/generated/prisma")).expect("create dirs");
         fs::write(temp_dir.join("src/main.rs"), "fn main() {}").expect("write file");
         fs::write(
+            // Split so this fixture doesn't trip ship's own secrets
+            // scan when it scans this very file.
             temp_dir.join("src/generated/prisma/client.ts"),
-            "AKIAABCDEFGHIJKLMNOP",
+            concat!("AKIA", "ABCDEFGHIJKLMNOP"),
         )
         .expect("write generated file");
 

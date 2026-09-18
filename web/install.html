@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Installation & Self-Update — SHIP Mission Manual</title>
+  <meta name="description" content="Cross-platform binary downloads, shell & PowerShell scripts, Cargo install, and in-place 'ship update' command.">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <main class="manual-wrapper">
+    
+    <!-- Top Bar -->
+    <header class="top-bar">
+      <div class="top-bar-left">
+        <span class="classification-stamp">
+          <span>★</span>
+          <span>Distribution // Cross-Platform</span>
+        </span>
+        <span class="version-stamp">RELEASE // v0.3.7</span>
+      </div>
+      <div class="top-bar-right">
+        <a href="https://github.com/dominicOT/ship" target="_blank" rel="noopener noreferrer" class="github-pill" title="View ship on GitHub">
+          <svg class="gh-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+          </svg>
+          <span>GitHub</span>
+          <span>↗</span>
+        </a>
+        <div class="meta-spec">
+          <div>DOC-ID: SPEC-SHIP-DIST</div>
+          <div>MODULE: INSTALL & UPDATE</div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Navigation Menu -->
+    <nav class="nav-bar">
+      <a href="index.html" class="nav-link">Overview</a>
+      <a href="security.html" class="nav-link">Security <span class="nav-badge">v0.3.5+</span></a>
+      <a href="hooks.html" class="nav-link">Git Hooks & Config</a>
+      <a href="install.html" class="nav-link active">Installation & Update <span class="nav-badge">v0.3.3+</span></a>
+    </nav>
+
+    <!-- Subpage Header -->
+    <div class="subpage-header">
+      <span class="subpage-badge">Binary Distribution & Lifecycle</span>
+      <h1 class="subpage-title">Installation & Self-Update</h1>
+      <p class="subpage-desc">
+        Pre-compiled standalone binaries for Linux (x86_64 & ARM64), macOS (Intel & Apple Silicon), and Windows (x86_64). Keep your installation current with background update notices and <code>ship update</code>.
+      </p>
+    </div>
+
+    <!-- 01. One-Line Installers -->
+    <div class="section-header">
+      <div class="section-title">01. Automated Installers</div>
+      <div class="section-subtitle">Shell & PowerShell Distribution</div>
+    </div>
+
+    <section class="manual-card">
+      <div class="install-tab-nav">
+        <button class="tab-btn active" onclick="switchFullInstallTab('sh', this)">Linux & macOS (Bash)</button>
+        <button class="tab-btn" onclick="switchFullInstallTab('ps1', this)">Windows (PowerShell)</button>
+        <button class="tab-btn" onclick="switchFullInstallTab('cargo', this)">Cargo Install (Source)</button>
+        <button class="tab-btn" onclick="switchFullInstallTab('prefix', this)">Custom Prefix Directory</button>
+      </div>
+
+      <div class="code-container">
+        <pre class="code-snippet" id="full-install-snippet">curl -sSL https://raw.githubusercontent.com/dominicOT/ship/master/scripts/install.sh | bash</pre>
+        <button class="copy-btn" onclick="copySnippet('full-install-snippet', this)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          <span class="copy-text">COPY</span>
+        </button>
+      </div>
+
+      <div class="install-footer-note" id="install-note-text">
+        The shell installer auto-detects system architecture (x86_64 or aarch64/Apple Silicon) and places the <code>ship</code> binary in <code>~/.local/bin</code> or <code>/usr/local/bin</code>.
+      </div>
+    </section>
+
+    <!-- 02. Supported Targets Matrix -->
+    <div class="section-header">
+      <div class="section-title">02. Platform Target Matrix</div>
+      <div class="section-subtitle">Pre-Built Standalone Binaries</div>
+    </div>
+
+    <div class="table-container">
+      <table class="spec-table">
+        <thead>
+          <tr>
+            <th>Operating System</th>
+            <th>Architecture</th>
+            <th>Direct Release Download Asset</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Linux</strong></td>
+            <td><code>x86_64</code></td>
+            <td><a href="https://github.com/dominicOT/ship/releases/latest/download/ship-linux-x86_64.tar.gz" class="manual-inline-link">ship-linux-x86_64.tar.gz</a></td>
+            <td><span class="check-pass">✓ Official</span></td>
+          </tr>
+          <tr>
+            <td><strong>Linux</strong></td>
+            <td><code>aarch64 (ARM64)</code></td>
+            <td><a href="https://github.com/dominicOT/ship/releases/latest/download/ship-linux-aarch64.tar.gz" class="manual-inline-link">ship-linux-aarch64.tar.gz</a></td>
+            <td><span class="check-pass">✓ Official</span></td>
+          </tr>
+          <tr>
+            <td><strong>macOS</strong></td>
+            <td><code>x86_64 (Intel)</code></td>
+            <td><a href="https://github.com/dominicOT/ship/releases/latest/download/ship-macos-x86_64.tar.gz" class="manual-inline-link">ship-macos-x86_64.tar.gz</a></td>
+            <td><span class="check-pass">✓ Official</span></td>
+          </tr>
+          <tr>
+            <td><strong>macOS</strong></td>
+            <td><code>aarch64 (Apple Silicon M1/M2/M3/M4)</code></td>
+            <td><a href="https://github.com/dominicOT/ship/releases/latest/download/ship-macos-aarch64.tar.gz" class="manual-inline-link">ship-macos-aarch64.tar.gz</a></td>
+            <td><span class="check-pass">✓ Official</span></td>
+          </tr>
+          <tr>
+            <td><strong>Windows</strong></td>
+            <td><code>x86_64</code></td>
+            <td><a href="https://github.com/dominicOT/ship/releases/latest/download/ship-windows-x86_64.zip" class="manual-inline-link">ship-windows-x86_64.zip</a></td>
+            <td><span class="check-pass">✓ Official</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 03. Self-Update Engine -->
+    <div class="section-header">
+      <div class="section-title">03. In-Place Self-Updating (ship update)</div>
+      <div class="section-subtitle">Seamless Binary Maintenance</div>
+    </div>
+
+    <section class="manual-card">
+      <h3 style="margin-bottom: 0.5rem;">Passive Update Notifications</h3>
+      <p style="font-size: 0.92rem; color: var(--ink); line-height: 1.6; margin-bottom: 1.25rem;">
+        When you run <code>ship</code> interactively in your terminal, it occasionally checks GitHub releases in the background (cached once every 24 hours, non-blocking) and gently notifies you when a newer version is ready:
+      </p>
+
+      <div class="terminal-wrapper" style="margin-bottom: 1.5rem;">
+        <div class="terminal-box" style="min-height: auto; padding: 1.25rem;">
+          <div class="text-bold">Checks</div>
+          <div>  <span class="check-pass">✓</span> <span class="check-pass">tests</span>          <span class="text-dim">passed</span></div>
+          <div>  <span class="check-pass">✓</span> <span class="check-pass">secrets</span>        <span class="text-dim">none found</span></div>
+          <div>  <span class="check-pass">✓</span> <span class="check-pass">TODOs</span>          <span class="text-dim">none found</span></div>
+          <br>
+          <div class="check-pass">✓ Ready to ship</div>
+          <br>
+          <div style="color: var(--mustard);">A new version of ship is available: v0.3.5 → v0.3.7</div>
+          <div class="text-dim">Run `ship update` to install the latest release.</div>
+        </div>
+      </div>
+
+      <h3 style="margin-bottom: 0.5rem;">Update Commands</h3>
+      <div class="code-container" style="margin-bottom: 1.25rem;">
+        <pre class="code-snippet" id="update-cmd-snippet">ship update          # download and install latest release in place
+ship update --check  # check for updates without installing
+ship update --force  # reinstall latest release even if current</pre>
+        <button class="copy-btn" onclick="copySnippet('update-cmd-snippet', this)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          <span class="copy-text">COPY</span>
+        </button>
+      </div>
+
+      <p style="font-size: 0.85rem; color: var(--ink-muted);">
+        Note: <code>ship update</code> manages binary installations. If you installed via <code>cargo install --path .</code>, update via cargo or git pull instead.
+      </p>
+    </section>
+
+    <!-- Footer -->
+    <footer class="manual-footer">
+      <div class="footer-stamp">DORB-AI MICRO-TOOLS PROGRAM // LAUNCH OPS</div>
+      <div class="footer-links">
+        <a href="hooks.html" class="footer-link">← Git Hooks & Config</a>
+        <span class="footer-divider">//</span>
+        <a href="index.html" class="footer-link">Overview →</a>
+        <span class="footer-divider">//</span>
+        <a href="https://github.com/dominicOT/ship" target="_blank" rel="noopener noreferrer" class="footer-link">
+          <span>GitHub</span>
+          <span>↗</span>
+        </a>
+      </div>
+    </footer>
+
+  </main>
+
+  <script>
+    const fullInstallSnippets = {
+      sh: 'curl -sSL https://raw.githubusercontent.com/dominicOT/ship/master/scripts/install.sh | bash',
+      ps1: 'irm https://raw.githubusercontent.com/dominicOT/ship/master/scripts/install.ps1 | iex\n\n# Or with execution policy bypass:\npowershell -ExecutionPolicy Bypass -Command "& { irm https://raw.githubusercontent.com/dominicOT/ship/master/scripts/install.ps1 | iex }"',
+      cargo: 'cargo install --git https://github.com/dominicOT/ship\n# or from a local clone:\ncargo install --path .',
+      prefix: 'curl -sSL https://raw.githubusercontent.com/dominicOT/ship/master/scripts/install.sh | bash -s -- --prefix ~/.local/bin'
+    };
+
+    const installNotes = {
+      sh: 'The shell installer auto-detects system architecture (x86_64 or aarch64/Apple Silicon) and places the ship binary in ~/.local/bin or /usr/local/bin.',
+      ps1: 'Downloads the Windows x86_64 zip archive directly, unpacks ship.exe to %USERPROFILE%\\.local\\bin, and ensures it is bound to your user PATH.',
+      cargo: 'Compiles the binary directly with rustc & cargo using release profile with LTO and binary stripping enabled.',
+      prefix: 'Supply --prefix to customize the installation target directory to fit isolated CI agents or custom user directories.'
+    };
+
+    function switchFullInstallTab(key, btn) {
+      document.querySelectorAll('.install-tab-nav .tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('full-install-snippet').textContent = fullInstallSnippets[key];
+      document.getElementById('install-note-text').textContent = installNotes[key];
+    }
+
+    function copySnippet(elementId, btn) {
+      const text = document.getElementById(elementId).textContent.trim();
+      navigator.clipboard.writeText(text).then(() => {
+        const textSpan = btn.querySelector('.copy-text');
+        const orig = textSpan.textContent;
+        btn.classList.add('copied');
+        textSpan.textContent = 'COPIED 0x00';
+        setTimeout(() => {
+          btn.classList.remove('copied');
+          textSpan.textContent = orig;
+        }, 2000);
+      });
+    }
+  </script>
+
+</body>
+</html>
