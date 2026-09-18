@@ -211,14 +211,23 @@ mod tests {
         )
         .expect("write jwt secret file");
 
+        // Both fixtures below are split across separate literals so
+        // ship's own secrets scan doesn't trip over this file's source
+        // text — the concatenated value is what actually reaches disk.
         fs::write(
             temp_dir.join("sa-key.json"),
-            r#"{"type": "service_account", "private_key": "-----BEGIN PRIVATE KEY-----\nabc\n-----END PRIVATE KEY-----\n"}"#,
+            concat!(
+                r#"{"type": "service_account", "private_key": "-----BEGIN "#,
+                "PRIVATE KEY-----\\nabc\\n-----END PRIVATE KEY-----\\n\"}"
+            ),
         )
         .expect("write gcp key file");
 
-        fs::write(temp_dir.join("Dockerfile"), "ENV STRIPE_KEY sk_live_abcdefghijklmnopqrst")
-            .expect("write dockerfile");
+        fs::write(
+            temp_dir.join("Dockerfile"),
+            concat!("ENV STRIPE_KEY ", "sk_live_", "abcdefghijklmnopqrst"),
+        )
+        .expect("write dockerfile");
 
         let project = Project::detect_from(&temp_dir).expect("detect project");
         let result = run(&project, true);
