@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Git Hooks & Configuration — SHIP Mission Manual</title>
+  <meta name="description" content="Automate pre-commit verification with 'ship init', team-shared .githooks, and project-level .ship.toml configuration.">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <main class="manual-wrapper">
+    
+    <!-- Top Bar -->
+    <header class="top-bar">
+      <div class="top-bar-left">
+        <span class="classification-stamp">
+          <span>★</span>
+          <span>Workflow Automation // Git Hooks</span>
+        </span>
+        <span class="version-stamp">RELEASE // v0.3.7</span>
+      </div>
+      <div class="top-bar-right">
+        <a href="https://github.com/dominicOT/ship" target="_blank" rel="noopener noreferrer" class="github-pill" title="View ship on GitHub">
+          <svg class="gh-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+          </svg>
+          <span>GitHub</span>
+          <span>↗</span>
+        </a>
+        <div class="meta-spec">
+          <div>DOC-ID: SPEC-SHIP-HOOKS</div>
+          <div>MODULE: SHIP INIT & CONFIG</div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Navigation Menu -->
+    <nav class="nav-bar">
+      <a href="index.html" class="nav-link">Overview</a>
+      <a href="security.html" class="nav-link">Security <span class="nav-badge">v0.3.5+</span></a>
+      <a href="hooks.html" class="nav-link active">Git Hooks & Config <span class="nav-badge">v0.3.1+</span></a>
+      <a href="install.html" class="nav-link">Installation & Update</a>
+    </nav>
+
+    <!-- Subpage Header -->
+    <div class="subpage-header">
+      <span class="subpage-badge">Subcommand: ship init</span>
+      <h1 class="subpage-title">Git Pre-Commit Hook & Configuration</h1>
+      <p class="subpage-desc">
+        Never let broken code or exposed keys leave your developer workstation. Install Ship as an automated, team-committed git <code>pre-commit</code> hook and persist scan rules via <code>.ship.toml</code>.
+      </p>
+    </div>
+
+    <!-- 01. Hook Setup Protocol -->
+    <div class="section-header">
+      <div class="section-title">01. Setup Protocol (ship init)</div>
+      <div class="section-subtitle">Zero-Config Repository Integration</div>
+    </div>
+
+    <section class="manual-card">
+      <p style="font-size: 0.95rem; margin-bottom: 1.2rem; color: var(--ink);">
+        Running <code>ship init</code> inside any git project configures a shared repository hook:
+      </p>
+
+      <div class="code-container" style="margin-bottom: 1.5rem;">
+        <pre class="code-snippet" id="hook-init-cmd">ship init
+# or tailor what runs during pre-commit:
+ship init --skip tests,logs      # fast check (default skips tests)
+ship init --only secrets,todos   # focus only on secrets and TODO markers
+ship init --all                  # execute every check including tests</pre>
+        <button class="copy-btn" onclick="copySnippet('hook-init-cmd', this)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          <span class="copy-text">COPY</span>
+        </button>
+      </div>
+
+      <div class="grid-2x2" style="margin-bottom: 0;">
+        <div class="eco-card">
+          <div class="eco-header">
+            <span class="eco-icon">01</span>
+            <span class="eco-title">Shared Hook Directory</span>
+          </div>
+          <p class="eco-detail">Creates <code>.githooks/pre-commit</code> (with execute permissions <code>0755</code>). Unlike <code>.git/hooks/</code>, this folder can be checked into git.</p>
+        </div>
+
+        <div class="eco-card">
+          <div class="eco-header">
+            <span class="eco-icon">02</span>
+            <span class="eco-title">Git Config Binding</span>
+          </div>
+          <p class="eco-detail">Configures git core settings: <code>git config core.hooksPath .githooks</code> so git immediately fires the script upon <code>git commit</code>.</p>
+        </div>
+
+        <div class="eco-card">
+          <div class="eco-header">
+            <span class="eco-icon">03</span>
+            <span class="eco-title">Project Config</span>
+          </div>
+          <p class="eco-detail">Generates a starter <code>.ship.toml</code> config file (unless <code>--no-config</code> is supplied) to enforce default skips and filters across your team.</p>
+        </div>
+
+        <div class="eco-card">
+          <div class="eco-header">
+            <span class="eco-icon">04</span>
+            <span class="eco-title">Sub-Second Execution</span>
+          </div>
+          <p class="eco-detail">By default skips the test suite (which belongs in CI or manual pre-push) so local commits remain instant and painless.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 02. Team Onboarding Workflow -->
+    <div class="section-header">
+      <div class="section-title">02. Team Onboarding Workflow</div>
+      <div class="section-subtitle">Commit Once, Protect Everyone</div>
+    </div>
+
+    <section class="manual-card">
+      <p style="font-size: 0.95rem; line-height: 1.6; margin-bottom: 1rem; color: var(--ink);">
+        Commit the created hooks directory and config file so everyone on your team shares identical pre-commit safety policies:
+      </p>
+
+      <div class="code-container" style="margin-bottom: 1.25rem;">
+        <pre class="code-snippet" id="team-commit-cmd">git add .githooks .ship.toml
+git commit -m "chore: add ship pre-commit hook and repository config"</pre>
+        <button class="copy-btn" onclick="copySnippet('team-commit-cmd', this)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          <span class="copy-text">COPY</span>
+        </button>
+      </div>
+
+      <p style="font-size: 0.92rem; color: var(--ink-muted); margin-bottom: 0.75rem;">
+        When other engineers clone or pull the repository, they enable the shared hooks with one quick git command:
+      </p>
+
+      <div class="code-container">
+        <pre class="code-snippet" id="teammate-enable-cmd">git config core.hooksPath .githooks</pre>
+        <button class="copy-btn" onclick="copySnippet('teammate-enable-cmd', this)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          <span class="copy-text">COPY</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- 03. Configuration Specification (.ship.toml) -->
+    <div class="section-header">
+      <div class="section-title">03. Repository Configuration (.ship.toml)</div>
+      <div class="section-subtitle">Declarative Rule Definition</div>
+    </div>
+
+    <section class="manual-card">
+      <p style="font-size: 0.95rem; line-height: 1.6; margin-bottom: 1rem; color: var(--ink);">
+        Ship reads <code>.ship.toml</code> from your project root. Any option specified in the file sets the default behavior for both manual <code>ship</code> runs and pre-commit hook executions:
+      </p>
+
+      <div class="code-container" style="margin-bottom: 1.5rem;">
+        <pre class="code-snippet" id="toml-spec-display"># .ship.toml — Ship project configuration
+# Placed in the root of your repository
+
+# Checks to skip by default:
+# Options: "tests", "secrets", "todos", "logs", "flags", "version", "migrations", "changelog"
+skip = ["todos", "logs"]
+
+# Or run exclusively a specific set of checks (mutually exclusive in practice):
+# only = ["secrets", "tests"]</pre>
+        <button class="copy-btn" onclick="copySnippet('toml-spec-display', this)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          <span class="copy-text">COPY</span>
+        </button>
+      </div>
+
+      <div class="table-container" style="margin-bottom: 0;">
+        <table class="spec-table">
+          <thead>
+            <tr>
+              <th>Key</th>
+              <th>Type</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>skip</code></td>
+              <td><code>Array&lt;String&gt;</code></td>
+              <td>List of check names to ignore during execution (e.g. <code>["todos", "logs"]</code>). Command-line <code>--skip</code> flags merge with or override this.</td>
+            </tr>
+            <tr>
+              <td><code>only</code></td>
+              <td><code>Array&lt;String&gt;</code></td>
+              <td>List of checks to run exclusively (e.g. <code>["secrets", "tests"]</code>). If specified, all other checks are omitted.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="manual-footer">
+      <div class="footer-stamp">DORB-AI MICRO-TOOLS PROGRAM // LAUNCH OPS</div>
+      <div class="footer-links">
+        <a href="security.html" class="footer-link">← Security Scan</a>
+        <span class="footer-divider">//</span>
+        <a href="install.html" class="footer-link">Installation & Update →</a>
+        <span class="footer-divider">//</span>
+        <a href="https://github.com/dominicOT/ship" target="_blank" rel="noopener noreferrer" class="footer-link">
+          <span>GitHub</span>
+          <span>↗</span>
+        </a>
+      </div>
+    </footer>
+
+  </main>
+
+  <script>
+    function copySnippet(elementId, btn) {
+      const text = document.getElementById(elementId).textContent.trim();
+      navigator.clipboard.writeText(text).then(() => {
+        const textSpan = btn.querySelector('.copy-text');
+        const orig = textSpan.textContent;
+        btn.classList.add('copied');
+        textSpan.textContent = 'COPIED 0x00';
+        setTimeout(() => {
+          btn.classList.remove('copied');
+          textSpan.textContent = orig;
+        }, 2000);
+      });
+    }
+  </script>
+
+</body>
+</html>
